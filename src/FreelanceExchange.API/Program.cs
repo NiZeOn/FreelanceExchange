@@ -5,7 +5,7 @@ using System.Text;
 using FreelanceExchange.API.Data;
 using FreelanceExchange.API.Hubs;
 using FreelanceExchange.API.Services;
-using BCrypt.Net; // важно для хеширования
+using BCrypt.Net; // для BCrypt
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +64,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ (СИНХРОННО) ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -73,7 +73,7 @@ using (var scope = app.Services.CreateScope())
         dbContext.Database.Migrate();
         dbContext.EnsureAchievementsCreated();
 
-        // 1. Создаём роли, если их нет
+        // Проверяем, есть ли роли
         if (!dbContext.Roles.Any())
         {
             dbContext.Roles.AddRange(
@@ -82,16 +82,16 @@ using (var scope = app.Services.CreateScope())
                 new Role { Name = "Customer" },
                 new Role { Name = "Freelancer" }
             );
-            dbContext.SaveChanges(); // синхронно
+            dbContext.SaveChanges();
         }
 
-        // 2. Получаем ID ролей
+        // Получаем ID ролей
         var adminRole = dbContext.Roles.First(r => r.Name == "Admin");
         var moderatorRole = dbContext.Roles.First(r => r.Name == "Moderator");
         var customerRole = dbContext.Roles.First(r => r.Name == "Customer");
         var freelancerRole = dbContext.Roles.First(r => r.Name == "Freelancer");
 
-        // 3. Администратор
+        // Создаём администратора
         if (!dbContext.Users.Any(u => u.Email == "admin@freelance.com"))
         {
             dbContext.Users.Add(new User
@@ -105,7 +105,7 @@ using (var scope = app.Services.CreateScope())
                 IsEmailVerified = true
             });
         }
-        // 4. Модератор
+        // Создаём модератора
         if (!dbContext.Users.Any(u => u.Email == "moderator@freelance.com"))
         {
             dbContext.Users.Add(new User
@@ -120,7 +120,7 @@ using (var scope = app.Services.CreateScope())
             });
         }
 
-        // 5. Тестовый заказчик
+        // Создаём тестового заказчика
         if (!dbContext.Users.Any(u => u.Email == "customer@test.com"))
         {
             dbContext.Users.Add(new User
@@ -135,7 +135,7 @@ using (var scope = app.Services.CreateScope())
             });
         }
 
-        // 6. Тестовый фрилансер
+        // Создаём тестового фрилансера
         if (!dbContext.Users.Any(u => u.Email == "freelancer@test.com"))
         {
             dbContext.Users.Add(new User
@@ -150,7 +150,7 @@ using (var scope = app.Services.CreateScope())
             });
         }
 
-        dbContext.SaveChanges(); // синхронное сохранение всех изменений
+        dbContext.SaveChanges();
     }
     catch (Exception ex)
     {
@@ -158,13 +158,10 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Ошибка при инициализации базы данных");
     }
 }
-// =====================================================
 
 // ==== ОТДАЧА ФРОНТЕНДА ====
-app.UseDefaultFiles(); // ищет index.html в wwwroot
-app.UseStaticFiles();  // отдаёт статические файлы
-
-// SPA fallback
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
 
 app.UseAuthentication();
