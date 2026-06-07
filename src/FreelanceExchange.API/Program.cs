@@ -12,8 +12,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ==== РУЧНАЯ УСТАНОВКА СТРОКИ ПОДКЛЮЧЕНИЯ ====
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("localhost"))
+{
+    // 🔴 ВАЖНО: замените эту строку на вашу Internal Connection String из Render!
+    connectionString = "postgresql://freelanceexchange_user:Pc9vzIb0TbRjM9VsRGvmTqX9kjZw2l6u@dpg-d8is5jk8aovs738lgl60-a/freelanceexchange";
+}
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
+// =============================================
 
 builder.Services.AddScoped<AchievementService>();
 
@@ -70,7 +78,7 @@ using (var scope = app.Services.CreateScope())
 // ================================================
 
 app.UseStaticFiles();
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // Если на Render не работает, закомментируй эту строку
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
