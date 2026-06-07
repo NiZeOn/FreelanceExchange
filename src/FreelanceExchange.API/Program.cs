@@ -5,7 +5,6 @@ using System.Text;
 using FreelanceExchange.API.Data;
 using FreelanceExchange.API.Hubs;
 using FreelanceExchange.API.Services;
-using BCrypt.Net; // для BCrypt
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +63,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -72,85 +71,6 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.Migrate();
         dbContext.EnsureAchievementsCreated();
-
-        // Проверяем, есть ли роли
-        if (!dbContext.Roles.Any())
-        {
-            dbContext.Roles.AddRange(
-                new Role { Name = "Admin" },
-                new Role { Name = "Moderator" },
-                new Role { Name = "Customer" },
-                new Role { Name = "Freelancer" }
-            );
-            dbContext.SaveChanges();
-        }
-
-        // Получаем ID ролей
-        var adminRole = dbContext.Roles.First(r => r.Name == "Admin");
-        var moderatorRole = dbContext.Roles.First(r => r.Name == "Moderator");
-        var customerRole = dbContext.Roles.First(r => r.Name == "Customer");
-        var freelancerRole = dbContext.Roles.First(r => r.Name == "Freelancer");
-
-        // Создаём администратора
-        if (!dbContext.Users.Any(u => u.Email == "admin@freelance.com"))
-        {
-            dbContext.Users.Add(new User
-            {
-                Email = "admin@freelance.com",
-                PasswordHash = BCrypt.HashPassword("Admin123!"),
-                FullName = "Главный администратор",
-                RoleId = adminRole.Id,
-                RegistrationDate = DateTime.UtcNow,
-                IsBlocked = false,
-                IsEmailVerified = true
-            });
-        }
-        // Создаём модератора
-        if (!dbContext.Users.Any(u => u.Email == "moderator@freelance.com"))
-        {
-            dbContext.Users.Add(new User
-            {
-                Email = "moderator@freelance.com",
-                PasswordHash = BCrypt.HashPassword("Moderator123!"),
-                FullName = "Системный модератор",
-                RoleId = moderatorRole.Id,
-                RegistrationDate = DateTime.UtcNow,
-                IsBlocked = false,
-                IsEmailVerified = true
-            });
-        }
-
-        // Создаём тестового заказчика
-        if (!dbContext.Users.Any(u => u.Email == "customer@test.com"))
-        {
-            dbContext.Users.Add(new User
-            {
-                Email = "customer@test.com",
-                PasswordHash = BCrypt.HashPassword("Customer123!"),
-                FullName = "Тестовый заказчик",
-                RoleId = customerRole.Id,
-                RegistrationDate = DateTime.UtcNow,
-                IsBlocked = false,
-                IsEmailVerified = true
-            });
-        }
-
-        // Создаём тестового фрилансера
-        if (!dbContext.Users.Any(u => u.Email == "freelancer@test.com"))
-        {
-            dbContext.Users.Add(new User
-            {
-                Email = "freelancer@test.com",
-                PasswordHash = BCrypt.HashPassword("Freelancer123!"),
-                FullName = "Тестовый фрилансер",
-                RoleId = freelancerRole.Id,
-                RegistrationDate = DateTime.UtcNow,
-                IsBlocked = false,
-                IsEmailVerified = true
-            });
-        }
-
-        dbContext.SaveChanges();
     }
     catch (Exception ex)
     {
@@ -160,8 +80,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ==== ОТДАЧА ФРОНТЕНДА ====
-app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseDefaultFiles(); // ищет index.html в wwwroot
+app.UseStaticFiles();  // отдаёт статические файлы (css, js, изображения)
+
+// Для SPA (клиентский роутинг) – все не-API запросы отдаём index.html
 app.MapFallbackToFile("index.html");
 
 app.UseAuthentication();
@@ -170,7 +92,7 @@ app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
-// ==== HEALTH CHECK ====
+// ==== HEALTH CHECK (для Render) ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
