@@ -19,8 +19,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ==== СТРОКА ПОДКЛЮЧЕНИЯ К POSTGRESQL (ПРАВИЛЬНЫЙ ФОРМАТ) ====
-// ВАЖНО: замените значения Host, Database, Username, Password на ваши реальные!
+// ==== СТРОКА ПОДКЛЮЧЕНИЯ К POSTGRESQL ====
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("localhost"))
 {
@@ -28,7 +27,6 @@ if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("localho
 }
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
-// =============================================
 
 builder.Services.AddScoped<AchievementService>();
 
@@ -61,13 +59,11 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// ==== SWAGGER ТЕПЕРЬ РАБОТАЕТ НА ПРОДЕ ====
+app.UseSwagger();
+app.UseSwaggerUI();
 
-// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И ДОСТИЖЕНИЙ ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -82,19 +78,21 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Ошибка при инициализации базы данных");
     }
 }
-// ================================================
 
+// ==== ПРАВИЛЬНЫЙ ПОРЯДОК ДЛЯ СТАТИКИ ====
+app.UseDefaultFiles(); // разрешает index.html
 app.UseStaticFiles();
-// app.UseHttpsRedirection(); // НЕ НУЖНО НА RENDER
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
 // ==== HEALTH CHECK ДЛЯ RENDER ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
-// ==== ПЕРЕНАПРАВЛЕНИЕ КОРНЯ НА SWAGGER (ЧТОБЫ НЕ БЫЛО 404) ====
+// ==== РЕДИРЕКТ КОРНЯ НА SWAGGER ====
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
 
 app.Run();
