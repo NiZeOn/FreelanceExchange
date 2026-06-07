@@ -5,6 +5,7 @@ using System.Text;
 using FreelanceExchange.API.Data;
 using FreelanceExchange.API.Hubs;
 using FreelanceExchange.API.Services;
+using BCrypt.Net; // Убедитесь, что пакет BCrypt.Net-Next установлен
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +64,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -71,6 +72,89 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.Migrate();
         dbContext.EnsureAchievementsCreated();
+
+        // 1. Создаём роли, если их нет
+        if (!dbContext.Roles.Any())
+        {
+            dbContext.Roles.AddRange(
+                new Role { Name = "Admin" },
+                new Role { Name = "Moderator" },
+                new Role { Name = "Customer" },
+                new Role { Name = "Freelancer" }
+            );
+            dbContext.SaveChanges();
+        }
+
+        // 2. Получаем ID ролей
+        var adminRole = dbContext.Roles.First(r => r.Name == "Admin");
+        var moderatorRole = dbContext.Roles.First(r => r.Name == "Moderator");
+        var customerRole = dbContext.Roles.First(r => r.Name == "Customer");
+        var freelancerRole = dbContext.Roles.First(r => r.Name == "Freelancer");
+
+        // 3. Создаём администратора, если нет
+        if (!dbContext.Users.Any(u => u.Email == "admin@freelance.com"))
+        {
+            var adminUser = new User
+            {
+                Email = "admin@freelance.com",
+                PasswordHash = BCrypt.HashPassword("Admin123!"),
+                FullName = "Главный администратор",
+                RoleId = adminRole.Id,
+                RegistrationDate = DateTime.UtcNow,
+                IsBlocked = false,
+                IsEmailVerified = true
+            };
+            dbContext.Users.Add(adminUser);
+        }
+        // 4. Создаём модератора, если нет
+        if (!dbContext.Users.Any(u => u.Email == "moderator@freelance.com"))
+        {
+            var moderatorUser = new User
+            {
+                Email = "moderator@freelance.com",
+                PasswordHash = BCrypt.HashPassword("Moderator123!"),
+                FullName = "Системный модератор",
+                RoleId = moderatorRole.Id,
+                RegistrationDate = DateTime.UtcNow,
+                IsBlocked = false,
+                IsEmailVerified = true
+            };
+            dbContext.Users.Add(moderatorUser);
+        }
+
+        // 5. Создаём тестового заказчика (если нужно)
+        if (!dbContext.Users.Any(u => u.Email == "customer@test.com"))
+        {
+            var customerUser = new User
+            {
+                Email = "customer@test.com",
+                PasswordHash = BCrypt.HashPassword("Customer123!"),
+                FullName = "Тестовый заказчик",
+                RoleId = customerRole.Id,
+                RegistrationDate = DateTime.UtcNow,
+                IsBlocked = false,
+                IsEmailVerified = true
+            };
+            dbContext.Users.Add(customerUser);
+        }
+
+        // 6. Создаём тестового фрилансера (если нужно)
+        if (!dbContext.Users.Any(u => u.Email == "freelancer@test.com"))
+        {
+            var freelancerUser = new User
+            {
+                Email = "freelancer@test.com",
+                PasswordHash = BCrypt.HashPassword("Freelancer123!"),
+                FullName = "Тестовый фрилансер",
+                RoleId = freelancerRole.Id,
+                RegistrationDate = DateTime.UtcNow,
+                IsBlocked = false,
+                IsEmailVerified = true
+            };
+            dbContext.Users.Add(freelancerUser);
+        }
+
+        await dbContext.SaveChangesAsync();
     }
     catch (Exception ex)
     {
@@ -78,6 +162,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Ошибка при инициализации базы данных");
     }
 }
+// =====================================================
 
 // ==== ОТДАЧА ФРОНТЕНДА ====
 app.UseDefaultFiles(); // ищет index.html в wwwroot
