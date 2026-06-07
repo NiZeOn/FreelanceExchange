@@ -5,7 +5,7 @@ using System.Text;
 using FreelanceExchange.API.Data;
 using FreelanceExchange.API.Hubs;
 using FreelanceExchange.API.Services;
-using BCrypt.Net; // Убедитесь, что пакет BCrypt.Net-Next установлен
+using BCrypt.Net; // важно для хеширования
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +64,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И СОЗДАНИЕ РОЛЕЙ/ПОЛЬЗОВАТЕЛЕЙ (СИНХРОННО) ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -82,7 +82,7 @@ using (var scope = app.Services.CreateScope())
                 new Role { Name = "Customer" },
                 new Role { Name = "Freelancer" }
             );
-            dbContext.SaveChanges();
+            dbContext.SaveChanges(); // синхронно
         }
 
         // 2. Получаем ID ролей
@@ -91,10 +91,10 @@ using (var scope = app.Services.CreateScope())
         var customerRole = dbContext.Roles.First(r => r.Name == "Customer");
         var freelancerRole = dbContext.Roles.First(r => r.Name == "Freelancer");
 
-        // 3. Создаём администратора, если нет
+        // 3. Администратор
         if (!dbContext.Users.Any(u => u.Email == "admin@freelance.com"))
         {
-            var adminUser = new User
+            dbContext.Users.Add(new User
             {
                 Email = "admin@freelance.com",
                 PasswordHash = BCrypt.HashPassword("Admin123!"),
@@ -103,13 +103,12 @@ using (var scope = app.Services.CreateScope())
                 RegistrationDate = DateTime.UtcNow,
                 IsBlocked = false,
                 IsEmailVerified = true
-            };
-            dbContext.Users.Add(adminUser);
+            });
         }
-        // 4. Создаём модератора, если нет
+        // 4. Модератор
         if (!dbContext.Users.Any(u => u.Email == "moderator@freelance.com"))
         {
-            var moderatorUser = new User
+            dbContext.Users.Add(new User
             {
                 Email = "moderator@freelance.com",
                 PasswordHash = BCrypt.HashPassword("Moderator123!"),
@@ -118,14 +117,13 @@ using (var scope = app.Services.CreateScope())
                 RegistrationDate = DateTime.UtcNow,
                 IsBlocked = false,
                 IsEmailVerified = true
-            };
-            dbContext.Users.Add(moderatorUser);
+            });
         }
 
-        // 5. Создаём тестового заказчика (если нужно)
+        // 5. Тестовый заказчик
         if (!dbContext.Users.Any(u => u.Email == "customer@test.com"))
         {
-            var customerUser = new User
+            dbContext.Users.Add(new User
             {
                 Email = "customer@test.com",
                 PasswordHash = BCrypt.HashPassword("Customer123!"),
@@ -134,14 +132,13 @@ using (var scope = app.Services.CreateScope())
                 RegistrationDate = DateTime.UtcNow,
                 IsBlocked = false,
                 IsEmailVerified = true
-            };
-            dbContext.Users.Add(customerUser);
+            });
         }
 
-        // 6. Создаём тестового фрилансера (если нужно)
+        // 6. Тестовый фрилансер
         if (!dbContext.Users.Any(u => u.Email == "freelancer@test.com"))
         {
-            var freelancerUser = new User
+            dbContext.Users.Add(new User
             {
                 Email = "freelancer@test.com",
                 PasswordHash = BCrypt.HashPassword("Freelancer123!"),
@@ -150,11 +147,10 @@ using (var scope = app.Services.CreateScope())
                 RegistrationDate = DateTime.UtcNow,
                 IsBlocked = false,
                 IsEmailVerified = true
-            };
-            dbContext.Users.Add(freelancerUser);
+            });
         }
 
-        await dbContext.SaveChangesAsync();
+        dbContext.SaveChanges(); // синхронное сохранение всех изменений
     }
     catch (Exception ex)
     {
@@ -166,9 +162,9 @@ using (var scope = app.Services.CreateScope())
 
 // ==== ОТДАЧА ФРОНТЕНДА ====
 app.UseDefaultFiles(); // ищет index.html в wwwroot
-app.UseStaticFiles();  // отдаёт статические файлы (css, js, изображения)
+app.UseStaticFiles();  // отдаёт статические файлы
 
-// Для SPA (клиентский роутинг) – все не-API запросы отдаём index.html
+// SPA fallback
 app.MapFallbackToFile("index.html");
 
 app.UseAuthentication();
@@ -177,7 +173,7 @@ app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
-// ==== HEALTH CHECK (для Render) ====
+// ==== HEALTH CHECK ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
