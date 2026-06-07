@@ -1,20 +1,27 @@
-# ---- Stage 1: Build the application ----
-FROM ://microsoft.com AS build
+---- Stage 1: Build ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Копируем файл проекта с учетом имени .API
-COPY ["src/FreelanceExchange.API/FreelanceExchange.API.csproj", "src/FreelanceExchange.API/"]
-RUN dotnet restore "src/FreelanceExchange.API/FreelanceExchange.API.csproj"
+Копируем .csproj и восстанавливаем зависимости
+COPY src/FreelanceExchange.API/*.csproj ./FreelanceExchange.API/
+RUN dotnet restore ./FreelanceExchange.API/FreelanceExchange.API.csproj
 
-# Копируем остальной код
-COPY . .
-WORKDIR "/src/src/FreelanceExchange.API"
-RUN dotnet publish "FreelanceExchange.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+Копируем весь исходный код
+COPY src/ ./src/
 
-# ---- Stage 2: Run the application ----
-FROM ://microsoft.com
+Публикуем приложение
+RUN dotnet publish ./src/FreelanceExchange.API/FreelanceExchange.API.csproj -c Release -o /app/publish
+
+---- Stage 2: Run ----
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 EXPOSE 8080
+
+Копируем собранное приложение
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://+:8080
+
+Задаём порт (обязательно для Render)
+ENV ASPNETCORE_URLS=http://+:8080/
+
+Точка входа
 ENTRYPOINT ["dotnet", "FreelanceExchange.API.dll"]
