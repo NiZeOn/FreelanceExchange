@@ -8,7 +8,7 @@ using FreelanceExchange.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройка порта из переменной окружения PORT (для Render)
+// ==== НАСТРОЙКА ПОРТА ДЛЯ RENDER ====
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
@@ -19,18 +19,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ==== РУЧНАЯ УСТАНОВКА СТРОКИ ПОДКЛЮЧЕНИЯ ====
+// ==== СТРОКА ПОДКЛЮЧЕНИЯ К POSTGRESQL (ПРАВИЛЬНЫЙ ФОРМАТ) ====
+// ВАЖНО: замените значения Host, Database, Username, Password на ваши реальные!
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("localhost"))
 {
-    // ⚠️ ВАЖНО: замените эту строку на вашу Internal Connection String из Render!
-    // Формат: postgresql://username:password@host:port/database
-    connectionString = "postgresql://freelanceexchange_user:Pc9vzIb0TbRjM9VsRGvmTqX9kjZw2l6u@dpg-d8is5jk8aovs738lgl60-a:5432/freelanceexchange";
-    Console.WriteLine("Using hardcoded connection string for Render PostgreSQL");
-}
-else
-{
-    Console.WriteLine("Using connection string from configuration");
+    connectionString = "Host=dpg-d8is5jk8aovs738lgl60-a;Port=5432;Database=freelanceexchange;Username=freelanceexchange_user;Password=Pc9vzIb0TbRjM9VsRGvmTqX9kjZw2l6u;SslMode=Require;Trust Server Certificate=true;";
 }
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -67,14 +61,13 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// Настройка Swagger только в разработке
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// ==== Инициализация базы данных и достижений ====
+// ==== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ И ДОСТИЖЕНИЙ ====
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -82,40 +75,26 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.Migrate();
         dbContext.EnsureAchievementsCreated();
-        Console.WriteLine("Database migration and achievements initialization completed.");
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Ошибка при инициализации базы данных");
-        Console.WriteLine($"DB ERROR: {ex.Message}");
     }
 }
 // ================================================
 
-// Для статических файлов (если есть wwwroot)
 app.UseStaticFiles();
-
-// На Render не нужно принудительное перенаправление на HTTPS (делается на уровне прокси)
-// app.UseHttpsRedirection();
-
+// app.UseHttpsRedirection(); // НЕ НУЖНО НА RENDER
 app.UseAuthentication();
 app.UseAuthorization();
-
-// SignalR hub
 app.MapHub<ChatHub>("/chatHub");
-
-// API контроллеры
 app.MapControllers();
 
-// Health check для Render (чтобы не ждал)
+// ==== HEALTH CHECK ДЛЯ RENDER ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
-// Перенаправление с корня на Swagger (чтобы не было 404)
-// Если у вас есть статический фронтенд (index.html), лучше использовать:
-// app.UseDefaultFiles();
-// app.UseStaticFiles();
-// app.MapFallbackToFile("index.html");
+// ==== ПЕРЕНАПРАВЛЕНИЕ КОРНЯ НА SWAGGER (ЧТОБЫ НЕ БЫЛО 404) ====
 app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
 
 app.Run();
