@@ -97,15 +97,16 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 relative antialiased font-sans overflow-y-auto">
 
+    <!-- декоративные световые узлы -->
     <div class="световой-узел top-[-20%] left-[-10%]"></div>
     <div class="световой-узел bottom-[-20%] right-[-10%]"></div>
-
-    <div class="relative z-10 w-full max-w-md my-8">
+<div class="relative z-10 w-full max-w-md my-8">
         <a href="index.html" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors mb-6 group pl-2">
             <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-1"></i>
             На главную
         </a>
-<div class="премиум-карта rounded-2xl p-8 sm:p-10 relative overflow-hidden">
+
+        <div class="премиум-карта rounded-2xl p-8 sm:p-10 relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#5B687C] to-transparent"></div>
             <div class="text-center mb-8">
                 <div class="inline-flex w-14 h-14 rounded-xl bg-[#D4CDCB] items-center justify-center mb-4 shadow-inner">
@@ -115,6 +116,7 @@
                 <p class="text-[#5A4A44] text-xs sm:text-sm mt-2 font-light">Авторизация в защищенной среде FreelanceExchange</p>
             </div>
 
+            <!-- Добавлен атрибут novalidate и удалена ссылка "Забыли?" -->
             <form id="loginForm" class="space-y-5" novalidate>
                 <div class="field-wrapper">
                     <label for="email" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Электронная почта</label>
@@ -130,6 +132,7 @@
                 <div class="field-wrapper">
                     <div class="flex justify-between items-center mb-2 pl-1">
                         <label for="password" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">Пароль</label>
+                        <!-- Кнопка "Забыли?" удалена по требованию -->
                     </div>
                     <div class="инпут-блок">
                         <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
@@ -154,8 +157,7 @@
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#D4CDCB]"></div></div>
                 <span class="relative bg-white px-3 text-[10px] font-bold uppercase tracking-widest text-[#8D8F8E]">Или</span>
             </div>
-
-            <p class="text-center text-xs text-[#5A4A44] font-light">
+<p class="text-center text-xs text-[#5A4A44] font-light">
                 Впервые на платформе? <a href="register.html" class="text-[#5B687C] font-bold hover:underline ml-1">Создать аккаунт</a>
             </p>
         </div>
@@ -169,7 +171,8 @@
             document.querySelectorAll('.инпут-блок').forEach(el => el.classList.remove('error-field'));
             document.getElementById('errorBlock').classList.add('hidden');
         }
-function showFieldError(fieldId, message) {
+
+        function showFieldError(fieldId, message) {
             const errorDiv = document.getElementById(error-${fieldId});
             if (errorDiv) {
                 errorDiv.textContent = message;
@@ -177,23 +180,6 @@ function showFieldError(fieldId, message) {
             }
             const input = document.getElementById(fieldId);
             if (input) input.closest('.инпут-блок').classList.add('error-field');
-        }
-
-        // Функция извлечения роли из JWT (без изменения бэкенда)
-        function getRoleFromToken(token) {
-            try {
-                const payloadBase64 = token.split('.')[1];
-                const payloadJson = atob(payloadBase64);
-                const payload = JSON.parse(payloadJson);
-                // стандартный claim для роли в .NET
-                return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] 
-                     payload['role'] 
-                     payload['Role'] 
-                     'Customer';
-            } catch(e) {
-                console.error('Ошибка декодирования токена', e);
-                return 'Customer';
-            }
         }
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -227,27 +213,15 @@ function showFieldError(fieldId, message) {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    const token = data.token;
-                    localStorage.setItem('token', token);
-                    
-                    // Извлекаем роль из JWT
-                    const role = getRoleFromToken(token);
-                    
-                    // Сохраняем информацию о пользователе
-                    localStorage.setItem('user', JSON.stringify({ 
-                        email: data.email  email, 
-                        fullName: data.fullName  email.split('@')[0], 
-                        role: role 
-                    }));
-                    
-                    // Перенаправляем в зависимости от роли
-                    if (role === 'Admin') window.location.href = 'admin-dashboard.html';
-                    else if (role === 'Moderator') window.location.href = 'moderator-dashboard.html';
-                    else if (role === 'Freelancer') window.location.href = 'freelancer-dashboard.html';
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify({ email: data.email, fullName: data.fullName, role: data.role }));
+                    if (data.role === 'Admin') window.location.href = 'admin-dashboard.html';
+                    else if (data.role === 'Moderator') window.location.href = 'moderator-dashboard.html';
+                    else if (data.role === 'Freelancer') window.location.href = 'freelancer-dashboard.html';
                     else window.location.href = 'customer-dashboard.html';
                 } else {
                     const err = await res.text();
-                    document.getElementById('errorMsg').textContent = err  'Неверный логин или пароль';
+                    document.getElementById('errorMsg').textContent = err || 'Неверный логин или пароль';
                     document.getElementById('errorBlock').classList.remove('hidden');
                 }
             } catch {
@@ -260,7 +234,7 @@ function showFieldError(fieldId, message) {
         document.querySelectorAll('#loginForm input').forEach(input => {
             input.addEventListener('input', function() {
                 const fieldName = this.id;
-const errorDiv = document.getElementById(error-${fieldName});
+                const errorDiv = document.getElementById(error-${fieldName});
                 if (errorDiv) errorDiv.classList.add('hidden');
                 this.closest('.инпут-блок')?.classList.remove('error-field');
                 document.getElementById('errorBlock').classList.add('hidden');
