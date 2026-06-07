@@ -59,7 +59,7 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// ==== SWAGGER ТЕПЕРЬ РАБОТАЕТ НА ПРОДЕ ====
+// ==== SWAGGER (ДОСТУПЕН ПО /swagger) ====
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -79,9 +79,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ==== ПРАВИЛЬНЫЙ ПОРЯДОК ДЛЯ СТАТИКИ ====
-app.UseDefaultFiles(); // разрешает index.html
-app.UseStaticFiles();
+// ==== ОТДАЧА ФРОНТЕНДА ====
+app.UseDefaultFiles(); // ищет index.html в wwwroot
+app.UseStaticFiles();  // отдаёт статические файлы (css, js, изображения)
+
+// Для SPA (клиентский роутинг) – все не-API запросы отдаём index.html
+app.MapFallbackToFile("index.html");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -89,10 +92,7 @@ app.UseAuthorization();
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
-// ==== HEALTH CHECK ДЛЯ RENDER ====
+// ==== HEALTH CHECK (для Render) ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
-
-// ==== РЕДИРЕКТ КОРНЯ НА SWAGGER ====
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
 
 app.Run();
