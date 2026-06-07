@@ -100,7 +100,8 @@
     <!-- декоративные световые узлы -->
     <div class="световой-узел top-[-20%] left-[-10%]"></div>
     <div class="световой-узел bottom-[-20%] right-[-10%]"></div>
-<div class="relative z-10 w-full max-w-md my-8">
+
+    <div class="relative z-10 w-full max-w-md my-8">
         <a href="index.html" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors mb-6 group pl-2">
             <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-1"></i>
             На главную
@@ -157,7 +158,8 @@
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#D4CDCB]"></div></div>
                 <span class="relative bg-white px-3 text-[10px] font-bold uppercase tracking-widest text-[#8D8F8E]">Или</span>
             </div>
-<p class="text-center text-xs text-[#5A4A44] font-light">
+
+            <p class="text-center text-xs text-[#5A4A44] font-light">
                 Впервые на платформе? <a href="register.html" class="text-[#5B687C] font-bold hover:underline ml-1">Создать аккаунт</a>
             </p>
         </div>
@@ -173,7 +175,7 @@
         }
 
         function showFieldError(fieldId, message) {
-            const errorDiv = document.getElementById(error-${fieldId});
+            const errorDiv = document.getElementById(`error-${fieldId}`);
             if (errorDiv) {
                 errorDiv.textContent = message;
                 errorDiv.classList.remove('hidden');
@@ -234,7 +236,7 @@
         document.querySelectorAll('#loginForm input').forEach(input => {
             input.addEventListener('input', function() {
                 const fieldName = this.id;
-                const errorDiv = document.getElementById(error-${fieldName});
+                const errorDiv = document.getElementById(`error-${fieldName}`);
                 if (errorDiv) errorDiv.classList.add('hidden');
                 this.closest('.инпут-блок')?.classList.remove('error-field');
                 document.getElementById('errorBlock').classList.add('hidden');
