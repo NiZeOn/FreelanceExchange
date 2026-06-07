@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Панель администратора | FreelanceExchange</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Сброс отступов и установка высоты */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        /* Новые стили для вкладок */
+        .tab-item {
+            background: transparent;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #5A4A44;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-item:hover {
+            background-color: #EFD8D6;
+            color: #161B2F;
+        }
+        .tab-item.active {
+            background-color: #5B687C;
+            color: white;
+            box-shadow: 0 4px 8px rgba(91,104,124,0.2);
+        }
+        @media (max-width: 768px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .премиум-карта { padding: 1rem !important; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .tab-item { padding: 0.4rem 0.8rem; font-size: 0.7rem; }
+        }
+        @media (max-width: 640px) {
+            .tab-item { flex: 1 0 auto; text-align: center; }
+            .finance-table th, .finance-table td { padding: 0.5rem; font-size: 0.7rem; }
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #F7F3ED; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        .table-container { overflow-x: auto; }
+        .finance-table { width: 100%; border-collapse: collapse; }
+        .finance-table th, .finance-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #D4CDCB; }
+        .finance-table th { text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; color: #5A4A44; font-weight: 700; }
+        canvas { max-height: 350px; width: 100% !important; }
+        .error-field {
+            border-color: #DBA1A2 !important;
+            background-color: rgba(219,161,162,0.05) !important;
+        }
+        .field-error {
+            font-size: 0.7rem;
+            color: #DBA1A2;
+            margin-top: 0.25rem;
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- декоративные световые узлы -->
+    <div class="световой-узел top-[-10%] left-[-10%]"></div>
+    <div class="световой-узел bottom-[-10%] right-[-10%]"></div>
+
+    <!-- ШАПКА (единая) -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Проекты</a>
+                <a href="index.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Главная</a>
+                <a href="#" id="cabinetLink" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Кабинет</a>
+            </nav>
+            <div id="authBlock" class="text-xs uppercase tracking-widest font-bold flex items-center space-x-5"></div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-10 relative z-10 max-w-6xl">
+        <div class="mb-8">
+            <h1 class="font-display text-3xl font-black text-[#161B2F] tracking-tight">Панель администратора</h1>
+            <p class="text-[#5A4A44] text-sm mt-1">Полное управление платформой</p>
+        </div>
+
+        <!-- Новая панель вкладок -->
+        <div class="mb-10 flex flex-wrap gap-2 border-b border-[#D4CDCB] pb-2">
+            <button class="tab-item" data-tab="users"><i data-lucide="users" class="w-4 h-4 inline mr-1"></i> Пользователи</button>
+            <button class="tab-item" data-tab="categories"><i data-lucide="folder-tree" class="w-4 h-4 inline mr-1"></i> Категории</button>
+            <button class="tab-item" data-tab="skills"><i data-lucide="tags" class="w-4 h-4 inline mr-1"></i> Навыки</button>
+            <button class="tab-item" data-tab="settings"><i data-lucide="settings" class="w-4 h-4 inline mr-1"></i> Настройки</button>
+            <button class="tab-item" data-tab="stats"><i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-1"></i> Статистика</button>
+            <button class="tab-item" data-tab="notify"><i data-lucide="bell" class="w-4 h-4 inline mr-1"></i> Уведомления</button>
+            <button class="tab-item" data-tab="financeReports"><i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i> Финансовый отчёт</button>
+            <button class="tab-item" data-tab="support"><i data-lucide="headphones" class="w-4 h-4 inline mr-1"></i> Обращения</button>
+        </div>
+
+        <!-- Контейнеры вкладок (те же, что были) -->
+        <div id="usersTab" class="tab-content space-y-4"><div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4">Управление пользователями</h3><div class="flex flex-col sm:flex-row gap-2 mb-6"><div class="инпут-блок flex-1"><input type="text" id="adminSearchUserInput" placeholder="Поиск по email или имени" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div><button id="adminSearchUserBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">Найти</button></div><div id="userSearchResultAdmin" class="space-y-3 mb-6"></div><div id="allUsersListAdmin" class="space-y-3 max-h-96 overflow-y-auto custom-scroll"></div></div></div>
+        <div id="categoriesTab" class="tab-content hidden space-y-4"><div class="премиум-карта p-6 rounded-xl"><div class="flex justify-between items-center mb-4 flex-wrap gap-2"><h3 class="font-bold text-lg">Категории заказов</h3><button id="addCategoryBtn" class="bg-[#5B687C] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">+ Добавить</button></div><div id="categoriesList" class="space-y-2"></div></div></div>
+        <div id="skillsTab" class="tab-content hidden space-y-4"><div class="премиум-карта p-6 rounded-xl"><div class="flex justify-between items-center mb-4 flex-wrap gap-2"><h3 class="font-bold text-lg">Навыки фрилансеров</h3><button id="addSkillBtn" class="bg-[#5B687C] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">+ Добавить</button></div><div id="skillsList" class="space-y-2"></div></div></div>
+        <div id="settingsTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4">Базовая комиссия платформы</h3><div class="flex flex-col sm:flex-row gap-3 items-end"><div class="flex-1"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Комиссия (%)</label><input type="number" id="commissionRate" step="0.5" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><button id="saveCommissionBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">Сохранить</button></div></div>
+            <div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4">Тарифы подписок</h3><div id="subscriptionsList" class="space-y-4"></div><button id="addSubscriptionBtn" class="bg-[#5B687C] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">+ Добавить тариф</button></div>
+        </div>
+        <div id="statsTab" class="tab-content hidden space-y-4">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4 text-[#161B2F]">Основные показатели</h3><div class="space-y-2 text-[#5A4A44]"><div class="flex justify-between"><span>Пользователей:</span><span id="statUsers" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Заказов всего:</span><span id="statOrders" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Завершённых заказов:</span><span id="statCompleted" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Оборот (BYN):</span><span id="statTurnover" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Комиссия (BYN):</span><span id="statCommission" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Начислено комиссии всего:</span><span id="statTotalCommission" class="font-semibold text-[#161B2F]">-</span></div><div class="flex justify-between"><span>Комиссия за последний месяц:</span><span id="statMonthlyCommission" class="font-semibold text-[#161B2F]">-</span></div></div></div>
+                <div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4 text-[#161B2F]">Динамика завершённых заказов (по месяцам)</h3><canvas id="ordersChart" class="w-full h-64"></canvas></div>
+            </div>
+        </div>
+        <div id="notifyTab" class="tab-content hidden space-y-4"><div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4">Отправить уведомление всем пользователям</h3><div class="space-y-4"><div><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Тема</label><input type="text" id="notificationSubject" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Сообщение</label><textarea id="notificationBody" rows="4" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></textarea></div><button id="sendNotificationBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">Отправить</button></div></div></div>
+        <div id="financeReportsTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта p-6 rounded-xl"><h3 class="font-bold text-lg mb-4">Детализация комиссий</h3><div class="flex flex-col sm:flex-row gap-4 mb-6 items-end"><div class="flex-1"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Дата от (YYYY-MM-DD)</label><input type="date" id="reportStartDate" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="flex-1"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Дата до (YYYY-MM-DD)</label><input type="date" id="reportEndDate" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><button id="loadReportBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#3A4454] transition-all">Показать</button></div><div class="table-container"><table class="finance-table"><thead><tr><th>ID заказа</th><th>Заказ</th><th>Заказчик</th><th>Фрилансер</th><th>Сумма комиссии (BYN)</th><th>Дата</th></tr></thead><tbody id="reportTableBody"><tr><td colspan="6" class="text-center text-[#5A4A44] py-6">Выберите период и нажмите «Показать»</td></tr></tbody></table></div><div class="mt-4 text-right"><span class="text-sm text-[#5A4A44]">Общая сумма комиссии: </span><span id="reportTotalCommission" class="text-xl font-bold text-[#5B687C]">0.00 BYN</span></div></div>
+        </div>
+        <div id="supportTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта p-6 rounded-xl"><h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F] mb-4">Обращения пользователей</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-1 border-r border-[#D4CDCB] pr-4"><div class="mb-3"><input type="text" id="searchConversation" placeholder="Поиск по имени..." class="w-full bg-white border border-[#D4CDCB] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div id="conversationsList" class="space-y-2 max-h-[500px] overflow-y-auto custom-scroll"></div></div><div class="md:col-span-2"><div id="conversationDetail" class="hidden"><div class="flex justify-between items-center mb-3 pb-2 border-b border-[#D4CDCB]"><h4 id="selectedUserName" class="font-bold text-lg text-[#161B2F]">Пользователь</h4><span id="selectedUserRole" class="text-xs bg-[#F7F3ED] px-2 py-1 rounded text-[#5A4A44]">Заказчик</span></div><div id="conversationMessages" class="h-80 overflow-y-auto custom-scroll mb-4 space-y-3 p-2 bg-[#FCF9F7] rounded-xl"></div><div class="flex gap-2"><input type="text" id="adminReplyInput" placeholder="Ответ пользователю..." class="flex-1 bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm outline-none focus:border-[#5B687C]"><button id="sendReplyBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#3A4454] transition-all">Отправить</button></div></div><div id="noConversationSelected" class="text-center py-12 text-[#5A4A44]"><i data-lucide="message-circle" class="w-12 h-12 mx-auto mb-3 opacity-30"></i><p>Выберите диалог из списка слева</p></div></div></div></div>
+        </div>
+    </main>
+
+    <!-- ПОДВАЛ (единый) -->
+    <footer class="py-12 border-t border-[#D4CDCB] bg-white/70 mt-auto">
+        <div class="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="text-center sm:text-left space-y-1">
+                <p class="font-display text-base tracking-widest font-black text-[#161B2F]">FreelanceExchange</p>
+                <p class="text-xs text-[#5A4A44]">© 2026 Безопасная фриланс-инфраструктура. Все права защищены.</p>
+            </div>
+            <div class="flex space-x-10 text-xs font-bold uppercase tracking-widest">
+                <button onclick="openModal('rulesModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Регламент</button>
+                <button onclick="openModal('supportModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Поддержка</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна (категории, навыки, тарифы) -->
+    <div id="categoryModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Категория</h3><input type="hidden" id="categoryId"><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Название</label><input type="text" id="categoryName" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Описание</label><textarea id="categoryDesc" rows="2" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></textarea></div><div class="flex gap-3"><button id="saveCategoryBtn" class="flex-1 bg-[#5B687C] text-white font-black py-2 rounded-xl text-xs hover:bg-[#3A4454] transition-all">Сохранить</button><button id="closeCategoryModal" class="bg-white border border-[#D4CDCB] text-[#5A4A44] px-4 rounded-xl text-xs hover:bg-[#F7F3ED] transition-all">Отмена</button></div></div></div>
+    <div id="skillModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Навык</h3><input type="hidden" id="skillId"><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Название навыка</label><input type="text" id="skillName" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="flex gap-3"><button id="saveSkillBtn" class="flex-1 bg-[#5B687C] text-white font-black py-2 rounded-xl text-xs hover:bg-[#3A4454] transition-all">Сохранить</button><button id="closeSkillModal" class="bg-white border border-[#D4CDCB] text-[#5A4A44] px-4 rounded-xl text-xs hover:bg-[#F7F3ED] transition-all">Отмена</button></div></div></div>
+    <div id="subscriptionModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Тариф подписки</h3><input type="hidden" id="subscriptionId"><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Название тарифа</label><input type="text" id="subscriptionName" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Цена (BYN)</label><input type="number" id="subscriptionPrice" step="0.01" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Длительность (дни)</label><input type="number" id="subscriptionDays" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="mb-4"><label class="block text-xs uppercase tracking-widest text-[#5A4A44] mb-1">Тип тарифа</label><select id="subscriptionTargetRole" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"><option value="Freelancer">Для фрилансера</option><option value="Customer">Для заказчика</option></select></div><div class="flex gap-3"><button id="saveSubscriptionBtn" class="flex-1 bg-[#5B687C] text-white font-black py-2 rounded-xl text-xs hover:bg-[#3A4454] transition-all">Сохранить</button><button id="closeSubscriptionModal" class="bg-white border border-[#D4CDCB] text-[#5A4A44] px-4 rounded-xl text-xs hover:bg-[#F7F3ED] transition-all">Отмена</button></div></div></div>
+
+    <!-- Модальные окна для регламента и поддержки (единые) -->
+    <div id="rulesModal" class="modal-blur fixed inset-0 z-50 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-xl p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl"><button onclick="closeModal('rulesModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button><div class="space-y-4"><span class="text-xs font-mono text-[#5B687C] font-bold uppercase tracking-widest">Безопасность</span><h3 class="font-display text-2xl font-bold">Правила экосистемы</h3><div class="text-[#5A4A44] text-sm space-y-4 max-h-[40vh] overflow-y-auto pr-2"><p><strong class="text-[#161B2F]">1. Идентификация.</strong> Все аккаунты проходят автоматическую модерацию. Запрещено дублирование профилей и использование фейковых портфолио.</p><p><strong class="text-[#161B2F]">2. Финансовая защита.</strong> Проведение сделок в обход «Сейфа» запрещено политикой безопасности платформы FreelanceExchange.</p></div></div></div></div>
+    <div id="supportModal" class="modal-blur fixed inset-0 z-50 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-sm p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl"><button onclick="closeModal('supportModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button><div class="space-y-6 text-center"><h3 class="font-display text-xl font-bold">Служба заботы FreelanceExchange</h3><p class="text-[#5A4A44] text-sm">Решаем вопросы верификации, вывода средств и технических сбоев 24/7.</p><a href="mailto:help@uzel.by" class="block w-full bg-[#D4CDCB] border border-[#5B687C] py-4 rounded-full text-xs font-bold text-[#161B2F] transition-colors hover:bg-[#5B687C] hover:text-white">help@uzel.by</a></div></div></div>
+
+    <script>
+        lucide.createIcons();
+
+        function openModal(id) { const modal = document.getElementById(id); modal.classList.remove('opacity-0', 'pointer-events-none'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); document.body.style.overflow = 'hidden'; }
+        function closeModal(id) { const modal = document.getElementById(id); modal.classList.add('opacity-0', 'pointer-events-none'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95'); document.body.style.overflow = ''; }
+        document.querySelectorAll('.modal-blur').forEach(modal => { modal.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); }); });
+
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+        const cabinetLink = document.getElementById('cabinetLink');
+        if (!token) window.location.href = 'login.html';
+        if (user.role !== 'Admin') { alert('Доступ запрещён. Только для администраторов.'); window.location.href = 'index.html'; }
+        function getDashboardUrl(role) { if (role === 'Customer') return 'customer-dashboard.html'; if (role === 'Freelancer') return 'freelancer-dashboard.html'; if (role === 'Moderator') return 'moderator-dashboard.html'; if (role === 'Admin') return 'admin-dashboard.html'; return '#'; }
+        cabinetLink.href = getDashboardUrl(user.role);
+        authBlock.innerHTML = `<span class="text-[#5A4A44] text-sm font-medium">${escapeHtml(user.fullName)} (Admin)</span><button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] transition-colors">Выйти</button>`;
+        document.getElementById('logoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+
+        const tabBtns = document.querySelectorAll('.tab-item');
+        const tabContents = { users: document.getElementById('usersTab'), categories: document.getElementById('categoriesTab'), skills: document.getElementById('skillsTab'), settings: document.getElementById('settingsTab'), stats: document.getElementById('statsTab'), notify: document.getElementById('notifyTab'), financeReports: document.getElementById('financeReportsTab'), support: document.getElementById('supportTab') };
+        let ordersChart = null;
+
+        function switchTab(tabId) {
+            Object.values(tabContents).forEach(c => c.classList.add('hidden'));
+            if (tabContents[tabId]) tabContents[tabId].classList.remove('hidden');
+            tabBtns.forEach(btn => { if (btn.dataset.tab === tabId) btn.classList.add('active'); else btn.classList.remove('active'); });
+            if (tabId === 'users') loadAllUsersAdmin();
+            if (tabId === 'categories') loadCategoriesAdmin();
+            if (tabId === 'skills') loadSkillsAdmin();
+            if (tabId === 'settings') loadSettings();
+            if (tabId === 'stats') { loadStats(); loadChartData(); }
+            if (tabId === 'support') loadConversations();
+            if (tabId === 'financeReports') { const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 30); document.getElementById('reportStartDate').value = start.toISOString().slice(0,10); document.getElementById('reportEndDate').value = end.toISOString().slice(0,10); loadCommissionReport(); }
+        }
+        tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+        switchTab('users');
+
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+
+        // ---------- ПОЛЬЗОВАТЕЛИ ----------
+        async function loadAllUsersAdmin() { const container = document.getElementById('allUsersListAdmin'); container.innerHTML = '<div class="text-center py-6 text-[#5A4A44]">Загрузка...</div>'; try { const res = await fetch('/api/Admin/users', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const users = await res.json(); if (!users.length) { container.innerHTML = '<div class="text-center py-4">Нет пользователей</div>'; return; } container.innerHTML = users.map(u => `<div class="bg-white border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center flex-wrap gap-3"><div><div class="font-bold text-[#161B2F]">${escapeHtml(u.fullName)}</div><div class="text-xs text-[#5A4A44]">${u.email} (${u.role})</div><div class="text-xs">Заблокирован: ${u.isBlocked ? 'Да' : 'Нет'}</div></div><div class="flex gap-2"><select class="role-select bg-white border border-[#D4CDCB] rounded-lg px-2 py-1 text-xs focus:outline-none"><option value="2" ${u.role === 'Customer' ? 'selected' : ''}>Заказчик</option><option value="3" ${u.role === 'Freelancer' ? 'selected' : ''}>Фрилансер</option><option value="4" ${u.role === 'Moderator' ? 'selected' : ''}>Модератор</option><option value="5" ${u.role === 'Admin' ? 'selected' : ''}>Администратор</option></select>${!u.isBlocked ? `<button class="block-user-admin bg-red-500/20 text-red-600 px-3 py-1 rounded-xl text-xs hover:bg-red-500/30" data-id="${u.id}">Заблокировать</button>` : `<button class="unblock-user-admin bg-green-500/20 text-green-600 px-3 py-1 rounded-xl text-xs hover:bg-green-500/30" data-id="${u.id}">Разблокировать</button>`}</div></div>`).join(''); attachUserEvents(); } } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки</div>'; } }
+        function attachUserEvents() { document.querySelectorAll('.role-select').forEach(select => select.addEventListener('change', async () => { const id = select.closest('.flex').querySelector('.block-user-admin, .unblock-user-admin')?.dataset.id; if(id) await fetch(`/api/Admin/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ newRoleId: parseInt(select.value) }) }); loadAllUsersAdmin(); })); document.querySelectorAll('.block-user-admin').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/block`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsersAdmin(); })); document.querySelectorAll('.unblock-user-admin').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/unblock`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsersAdmin(); })); }
+        document.getElementById('adminSearchUserBtn')?.addEventListener('click', async () => { const query = document.getElementById('adminSearchUserInput').value.trim(); if (!query) { loadAllUsersAdmin(); return; } try { const res = await fetch('/api/Admin/users', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const users = await res.json(); const found = users.filter(u => u.email.toLowerCase().includes(query.toLowerCase()) || u.fullName.toLowerCase().includes(query.toLowerCase())); const resultDiv = document.getElementById('userSearchResultAdmin'); if (found.length) { resultDiv.innerHTML = found.map(u => `<div class="bg-white border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center flex-wrap gap-3"><div><div class="font-bold text-[#161B2F]">${escapeHtml(u.fullName)}</div><div class="text-xs text-[#5A4A44]">${u.email} (${u.role})</div><div class="text-xs">Заблокирован: ${u.isBlocked ? 'Да' : 'Нет'}</div></div><div class="flex gap-2"><button class="block-user-search bg-red-500/20 text-red-600 px-3 py-1 rounded-xl text-xs" data-id="${u.id}">Заблокировать</button><button class="unblock-user-search bg-green-500/20 text-green-600 px-3 py-1 rounded-xl text-xs" data-id="${u.id}">Разблокировать</button></div></div>`).join(''); document.querySelectorAll('.block-user-search').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/block`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsersAdmin(); document.getElementById('userSearchResultAdmin').innerHTML = ''; document.getElementById('adminSearchUserInput').value = ''; })); document.querySelectorAll('.unblock-user-search').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/unblock`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsersAdmin(); document.getElementById('userSearchResultAdmin').innerHTML = ''; document.getElementById('adminSearchUserInput').value = ''; })); } else resultDiv.innerHTML = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-xl">Пользователь не найден</div>'; } } catch(e) { console.error(e); } });
+
+        // ---- КАТЕГОРИИ ----
+        async function loadCategoriesAdmin() { const container = document.getElementById('categoriesList'); container.innerHTML = '<div class="text-center py-6 text-[#5A4A44]">Загрузка...</div>'; try { const res = await fetch('/api/Admin/categories', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const cats = await res.json(); if (!cats.length) { container.innerHTML = '<div>Нет категорий</div>'; return; } container.innerHTML = cats.map(cat => `<div class="bg-white border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center"><div><div class="font-bold text-[#161B2F]">${escapeHtml(cat.name)}</div><div class="text-xs text-[#5A4A44]">${escapeHtml(cat.description || '')}</div></div><div class="flex gap-2"><button class="edit-category bg-[#5B687C]/10 text-[#5B687C] px-3 py-1 rounded-xl text-xs hover:bg-[#5B687C]/20" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-desc="${escapeHtml(cat.description || '')}">Редактировать</button><button class="delete-category bg-red-500/20 text-red-600 px-3 py-1 rounded-xl text-xs hover:bg-red-500/30" data-id="${cat.id}">Удалить</button></div></div>`).join(''); attachCategoryEvents(); } } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка</div>'; } }
+        function attachCategoryEvents() { document.querySelectorAll('.edit-category').forEach(btn => btn.addEventListener('click', () => { document.getElementById('categoryId').value = btn.dataset.id; document.getElementById('categoryName').value = btn.dataset.name; document.getElementById('categoryDesc').value = btn.dataset.desc; document.getElementById('categoryModal').classList.remove('hidden'); })); document.querySelectorAll('.delete-category').forEach(btn => btn.addEventListener('click', async () => { if (confirm('Удалить категорию?')) { await fetch(`/api/Admin/categories/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadCategoriesAdmin(); } })); }
+        document.getElementById('addCategoryBtn').addEventListener('click', () => { document.getElementById('categoryId').value = ''; document.getElementById('categoryName').value = ''; document.getElementById('categoryDesc').value = ''; document.getElementById('categoryModal').classList.remove('hidden'); });
+        document.getElementById('saveCategoryBtn').addEventListener('click', async () => { const id = document.getElementById('categoryId').value, name = document.getElementById('categoryName').value, description = document.getElementById('categoryDesc').value; if (!name) { alert('Введите название'); return; } const url = id ? `/api/Admin/categories/${id}` : '/api/Admin/categories'; const method = id ? 'PUT' : 'POST'; await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name, description }) }); document.getElementById('categoryModal').classList.add('hidden'); loadCategoriesAdmin(); });
+        document.getElementById('closeCategoryModal').addEventListener('click', () => document.getElementById('categoryModal').classList.add('hidden'));
+
+        // ---- НАВЫКИ ----
+        async function loadSkillsAdmin() { const container = document.getElementById('skillsList'); container.innerHTML = '<div class="text-center py-6 text-[#5A4A44]">Загрузка...</div>'; try { const res = await fetch('/api/Admin/skills', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const skills = await res.json(); if (!skills.length) { container.innerHTML = '<div>Нет навыков</div>'; return; } container.innerHTML = skills.map(skill => `<div class="bg-white border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center"><div class="font-bold text-[#161B2F]">${escapeHtml(skill.name)}</div><div class="flex gap-2"><button class="edit-skill bg-[#5B687C]/10 text-[#5B687C] px-3 py-1 rounded-xl text-xs hover:bg-[#5B687C]/20" data-id="${skill.id}" data-name="${escapeHtml(skill.name)}">Редактировать</button><button class="delete-skill bg-red-500/20 text-red-600 px-3 py-1 rounded-xl text-xs hover:bg-red-500/30" data-id="${skill.id}">Удалить</button></div></div>`).join(''); attachSkillEvents(); } } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка</div>'; } }
+        function attachSkillEvents() { document.querySelectorAll('.edit-skill').forEach(btn => btn.addEventListener('click', () => { document.getElementById('skillId').value = btn.dataset.id; document.getElementById('skillName').value = btn.dataset.name; document.getElementById('skillModal').classList.remove('hidden'); })); document.querySelectorAll('.delete-skill').forEach(btn => btn.addEventListener('click', async () => { if (confirm('Удалить навык?')) { await fetch(`/api/Admin/skills/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadSkillsAdmin(); } })); }
+        document.getElementById('addSkillBtn').addEventListener('click', () => { document.getElementById('skillId').value = ''; document.getElementById('skillName').value = ''; document.getElementById('skillModal').classList.remove('hidden'); });
+        document.getElementById('saveSkillBtn').addEventListener('click', async () => { const id = document.getElementById('skillId').value, name = document.getElementById('skillName').value; if (!name) { alert('Введите название'); return; } const url = id ? `/api/Admin/skills/${id}` : '/api/Admin/skills'; const method = id ? 'PUT' : 'POST'; await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name }) }); document.getElementById('skillModal').classList.add('hidden'); loadSkillsAdmin(); });
+        document.getElementById('closeSkillModal').addEventListener('click', () => document.getElementById('skillModal').classList.add('hidden'));
+
+        // ---- НАСТРОЙКИ ----
+        let commissionHandlerInitialized = false;
+        async function loadSettings() { try { const res = await fetch('/api/Admin/commission', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const data = await res.json(); document.getElementById('commissionRate').value = data.rate || '5'; } else document.getElementById('commissionRate').value = '5'; } catch(e) { document.getElementById('commissionRate').value = '5'; } if (!commissionHandlerInitialized) { document.getElementById('saveCommissionBtn').addEventListener('click', async () => { const rate = parseFloat(document.getElementById('commissionRate').value); await fetch('/api/Admin/commission', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ rate }) }); alert('Комиссия сохранена'); }); commissionHandlerInitialized = true; } await loadSubscriptionsAdmin(); }
+        async function loadSubscriptionsAdmin() { const subsContainer = document.getElementById('subscriptionsList'); subsContainer.innerHTML = '<div class="text-center py-2 text-[#5A4A44]">Загрузка...</div>'; try { const subsRes = await fetch('/api/Admin/subscriptions', { headers: { 'Authorization': `Bearer ${token}` } }); if (subsRes.ok) { const subs = await subsRes.json(); if (!subs.length) subsContainer.innerHTML = '<div>Нет тарифов</div>'; else { subsContainer.innerHTML = subs.map(sub => `<div class="bg-white border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center"><div><strong class="text-[#161B2F]">${escapeHtml(sub.name)}</strong> - ${sub.price} BYN / ${sub.days} дней<div class="text-xs text-[#5A4A44] mt-1">${sub.targetRole === 'Customer' ? 'Для заказчика' : (sub.targetRole === 'Freelancer' ? 'Для фрилансера' : 'Общий')}</div></div><div class="flex gap-2"><button class="edit-subscription bg-[#5B687C]/10 text-[#5B687C] px-3 py-1 rounded-xl text-xs hover:bg-[#5B687C]/20" data-id="${sub.id}" data-name="${escapeHtml(sub.name)}" data-price="${sub.price}" data-days="${sub.days}" data-targetrole="${sub.targetRole || 'Freelancer'}">Редактировать</button><button class="delete-subscription bg-red-500/20 text-red-600 px-3 py-1 rounded-xl text-xs hover:bg-red-500/30" data-id="${sub.id}">Удалить</button></div></div>`).join(''); attachSubscriptionEvents(); } } else subsContainer.innerHTML = '<div>Нет данных</div>'; } catch(e) { subsContainer.innerHTML = '<div>Ошибка загрузки</div>'; } }
+        function attachSubscriptionEvents() { document.querySelectorAll('.edit-subscription').forEach(btn => btn.addEventListener('click', () => { document.getElementById('subscriptionId').value = btn.dataset.id; document.getElementById('subscriptionName').value = btn.dataset.name; document.getElementById('subscriptionPrice').value = btn.dataset.price; document.getElementById('subscriptionDays').value = btn.dataset.days; document.getElementById('subscriptionTargetRole').value = btn.dataset.targetrole || 'Freelancer'; document.getElementById('subscriptionModal').classList.remove('hidden'); })); document.querySelectorAll('.delete-subscription').forEach(btn => btn.addEventListener('click', async () => { if (confirm('Удалить тариф? Это действие нельзя отменить.')) { try { const delRes = await fetch(`/api/Admin/subscriptions/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (delRes.ok) { alert('Тариф удалён'); await loadSubscriptionsAdmin(); } else alert('Ошибка удаления тарифа'); } catch(e) { alert('Ошибка сети'); } } })); }
+        document.getElementById('addSubscriptionBtn').addEventListener('click', () => { document.getElementById('subscriptionId').value = ''; document.getElementById('subscriptionName').value = ''; document.getElementById('subscriptionPrice').value = ''; document.getElementById('subscriptionDays').value = ''; document.getElementById('subscriptionTargetRole').value = 'Freelancer'; document.getElementById('subscriptionModal').classList.remove('hidden'); });
+        document.getElementById('saveSubscriptionBtn').addEventListener('click', async () => { const id = document.getElementById('subscriptionId').value, name = document.getElementById('subscriptionName').value.trim(), price = parseFloat(document.getElementById('subscriptionPrice').value), days = parseInt(document.getElementById('subscriptionDays').value), targetRole = document.getElementById('subscriptionTargetRole').value; if (!name || isNaN(price) || isNaN(days)) { alert('Заполните все поля корректно'); return; } const url = id ? `/api/Admin/subscriptions/${id}` : '/api/Admin/subscriptions'; const method = id ? 'PUT' : 'POST'; const body = JSON.stringify({ name, price, days, targetRole }); try { const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body }); if (res.ok) { document.getElementById('subscriptionModal').classList.add('hidden'); await loadSubscriptionsAdmin(); } else alert('Ошибка сохранения тарифа'); } catch(e) { alert('Ошибка сети'); } });
+        document.getElementById('closeSubscriptionModal').addEventListener('click', () => document.getElementById('subscriptionModal').classList.add('hidden'));
+
+        // ---- СТАТИСТИКА ----
+        async function loadStats() { try { const res = await fetch('/api/Admin/stats', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const stats = await res.json(); document.getElementById('statUsers').innerText = stats.totalUsers; document.getElementById('statOrders').innerText = stats.totalOrders; document.getElementById('statCompleted').innerText = stats.completedOrders; document.getElementById('statTurnover').innerText = stats.totalTurnover; document.getElementById('statCommission').innerText = stats.totalCommission; } const commissionStatsRes = await fetch('/api/Admin/commission-stats', { headers: { 'Authorization': `Bearer ${token}` } }); if (commissionStatsRes.ok) { const cs = await commissionStatsRes.json(); document.getElementById('statTotalCommission').innerText = cs.totalCommission?.toFixed(2) ?? '0.00'; document.getElementById('statMonthlyCommission').innerText = cs.monthlyCommission?.toFixed(2) ?? '0.00'; } else { document.getElementById('statTotalCommission').innerText = '0.00'; document.getElementById('statMonthlyCommission').innerText = '0.00'; } } catch(e) { console.error(e); } }
+
+        // ---- ГРАФИК ЗАКАЗОВ ----
+        async function loadChartData() {
+            try {
+                const res = await fetch('/api/Admin/orders-by-month', { headers: { 'Authorization': `Bearer ${token}` } });
+                let months = [], counts = [];
+                if (res.ok) {
+                    const data = await res.json();
+                    months = data.months || [];
+                    counts = data.counts || [];
+                } else {
+                    console.warn('Используются демо-данные');
+                    const now = new Date();
+                    for (let i = 5; i >= 0; i--) { const d = new Date(); d.setMonth(now.getMonth() - i); months.push(d.toLocaleString('default', { month: 'short', year: 'numeric' })); counts.push(Math.floor(Math.random() * 30) + 5); }
+                }
+                const ctx = document.getElementById('ordersChart').getContext('2d');
+                if (ordersChart) ordersChart.destroy();
+                Chart.defaults.set('plugins.datalabels', { color: '#161B2F', anchor: 'end', align: 'top', offset: 4, font: { weight: 'bold', size: 12 } });
+                ordersChart = new Chart(ctx, { type: 'bar', data: { labels: months, datasets: [{ label: 'Завершённые заказы', data: counts, backgroundColor: 'rgba(91,104,124,0.6)', borderColor: '#5B687C', borderWidth: 2, borderRadius: 6, barPercentage: 0.65, categoryPercentage: 0.8 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#161B2F', font: { size: 12 } } }, tooltip: { backgroundColor: 'rgba(0,0,0,0.7)', titleColor: '#5B687C', bodyColor: '#F7F3F0', callbacks: { label: (context) => `${context.dataset.label}: ${context.raw} заказов` } }, datalabels: { formatter: (value) => value, color: '#161B2F', anchor: 'end', align: 'top', offset: 4 } }, scales: { y: { beginAtZero: true, grid: { color: '#D4CDCB' }, ticks: { color: '#5A4A44', stepSize: 1, precision: 0 }, title: { display: true, text: 'Количество заказов', color: '#5A4A44' } }, x: { ticks: { color: '#5A4A44', font: { size: 11 } }, grid: { display: false }, title: { display: true, text: 'Месяц', color: '#5A4A44' } } } } });
+            } catch(e) { console.error('Ошибка загрузки графика', e); }
+        }
+
+        // ---- ФИНАНСОВЫЙ ОТЧЁТ ----
+        async function loadCommissionReport() { const startDate = document.getElementById('reportStartDate').value, endDate = document.getElementById('reportEndDate').value; if (!startDate || !endDate) { alert('Укажите период'); return; } const tbody = document.getElementById('reportTableBody'), totalSpan = document.getElementById('reportTotalCommission'); tbody.innerHTML = '<tr><td colspan="6" class="text-center text-[#5A4A44] py-6">Загрузка...</td></tr>'; try { const url = `/api/Admin/commission-transactions?startDate=${startDate}&endDate=${endDate}`; const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const data = await res.json(); if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-[#5A4A44] py-6">Нет данных за выбранный период</td></tr>'; totalSpan.innerText = '0.00 BYN'; return; } let total = 0; tbody.innerHTML = data.map(t => { total += t.amount || 0; return `<tr><td>${t.orderId || '—'}</td><td>${escapeHtml(t.orderTitle || '—')}</td><td>${escapeHtml(t.customerName || '—')}</td><td>${escapeHtml(t.freelancerName || '—')}</td><td>${(t.amount || 0).toFixed(2)} BYN</td><td>${new Date(t.date).toLocaleDateString()}</td></tr>`; }).join(''); totalSpan.innerText = total.toFixed(2) + ' BYN'; } else { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-red-500 py-6">Ошибка загрузки数据</td></tr>'; } } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="6" class="text-center text-red-500 py-6">Ошибка сети</td></tr>'; } }
+        document.getElementById('loadReportBtn')?.addEventListener('click', loadCommissionReport);
+        document.getElementById('sendNotificationBtn').addEventListener('click', async () => { const subject = document.getElementById('notificationSubject').value, body = document.getElementById('notificationBody').value; if (!subject || !body) { alert('Заполните тему и сообщение'); return; } try { const res = await fetch('/api/Admin/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ subject, body }) }); if (res.ok) alert('Уведомление отправлено'); else alert('Ошибка'); } catch(e) { alert('Ошибка сети'); } });
+
+        // ---------- ПОДДЕРЖКА ----------
+        let currentUserId = null;
+        async function loadConversations() { const container = document.getElementById('conversationsList'); container.innerHTML = '<div class="text-center py-4 text-[#5A4A44] text-sm">Загрузка...</div>'; try { const res = await fetch('/api/AdminMessages/conversations', { headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error(`Ошибка ${res.status}`); const convs = await res.json(); if (!convs.length) { container.innerHTML = '<div class="text-center py-8 text-[#5A4A44] text-sm">Нет обращений от пользователей</div>'; return; } container.innerHTML = convs.map(c => `<div class="conversation-item bg-white border border-[#D4CDCB] rounded-xl p-3 cursor-pointer hover:bg-[#F7F3ED] transition-all" data-user-id="${c.userId}" data-user-name="${escapeHtml(c.userName)}" data-user-role="${c.userRole || 'Пользователь'}"><div class="flex justify-between items-start"><div class="font-medium text-sm truncate flex-1 text-[#161B2F]">${escapeHtml(c.userName)}</div>${c.unreadCount > 0 ? `<span class="bg-[#5B687C] text-white text-[10px] rounded-full px-1.5 ml-2">${c.unreadCount}</span>` : ''}</div><div class="text-xs text-[#5A4A44] mt-1 truncate">${escapeHtml(c.lastMessage)}</div><div class="text-[10px] text-[#8D8F8E] mt-1">${new Date(c.lastMessageDate).toLocaleString()}</div></div>`).join(''); document.querySelectorAll('.conversation-item').forEach(el => el.addEventListener('click', () => { const userId = parseInt(el.dataset.userId), userName = el.dataset.userName, userRole = el.dataset.userRole; loadConversationWithUser(userId, userName, userRole); })); const searchInput = document.getElementById('searchConversation'); if (searchInput) searchInput.oninput = () => { const term = searchInput.value.trim().toLowerCase(); document.querySelectorAll('.conversation-item').forEach(item => { const name = item.dataset.userName?.toLowerCase() || ''; item.style.display = (term === '' || name.includes(term)) ? 'flex' : 'none'; }); }; } catch(e) { console.error(e); container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки диалогов</div>'; } }
+        async function loadConversationWithUser(userId, userName, userRole) { currentUserId = userId; const detailDiv = document.getElementById('conversationDetail'), noConvDiv = document.getElementById('noConversationSelected'), userNameSpan = document.getElementById('selectedUserName'), userRoleSpan = document.getElementById('selectedUserRole'); userNameSpan.innerText = userName; userRoleSpan.innerText = userRole || (userId ? 'Пользователь' : ''); detailDiv.classList.remove('hidden'); noConvDiv.classList.add('hidden'); const messagesContainer = document.getElementById('conversationMessages'); messagesContainer.innerHTML = '<div class="text-center py-4 text-[#5A4A44]">Загрузка сообщений...</div>'; try { const res = await fetch(`/api/AdminMessages/conversation/${userId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error(`Ошибка ${res.status}`); const messages = await res.json(); if (!messages.length) { messagesContainer.innerHTML = '<div class="text-center py-8 text-[#5A4A44]">Нет сообщений</div>'; return; } messagesContainer.innerHTML = messages.map(m => `<div class="flex ${m.isFromAdmin ? 'justify-end' : 'justify-start'}"><div class="max-w-[75%] ${m.isFromAdmin ? 'bg-[#D4CDCB] border border-[#5B687C]' : 'bg-white border border-[#D4CDCB]'} rounded-xl p-3"><div class="text-xs ${m.isFromAdmin ? 'text-[#5B687C]' : 'text-[#5A4A44]'} mb-1">${m.isFromAdmin ? 'Вы (Админ)' : escapeHtml(userName)}</div><div class="text-sm break-words text-[#161B2F]">${escapeHtml(m.message)}</div><div class="text-[10px] text-[#8D8F8E] text-right mt-1">${new Date(m.sentAt).toLocaleString()}</div></div></div>`).join(''); messagesContainer.scrollTop = messagesContainer.scrollHeight; await loadConversations(); } catch(e) { console.error(e); messagesContainer.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки сообщений</div>'; } }
+        document.getElementById('sendReplyBtn')?.addEventListener('click', async () => { const msg = document.getElementById('adminReplyInput').value.trim(); if (!msg || !currentUserId) return; try { const res = await fetch(`/api/AdminMessages/reply/${currentUserId}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: msg }) }); if (res.ok) { document.getElementById('adminReplyInput').value = ''; const userName = document.getElementById('selectedUserName').innerText, userRole = document.getElementById('selectedUserRole').innerText; await loadConversationWithUser(currentUserId, userName, userRole); await loadConversations(); } else alert('Ошибка отправки'); } catch(e) { alert('Ошибка сети'); } });
+    </script>
+</body>
+</html>

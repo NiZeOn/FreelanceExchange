@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Кабинет заказчика | FreelanceExchange</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Geologica', 'sans-serif'] },
+                    colors: {
+                        космос: '#120A0B', 
+                        винныйАкцент: '#F0A8AE', 
+                        винныйНеон: '#B8626A',
+                        темныйБлок: '#1C1113', 
+                        графит: '#2B1E20', 
+                        кремТекст: '#F7F3F0', 
+                        приглушенный: '#A89B9C'
+                    },
+                    animation: { 'fade-in': 'fadeIn 0.2s ease-out' },
+                    keyframes: { fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #120A0B; color: #F7F3F0; overflow-x: hidden; }
+        .световой-узел { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(184,98,106,0.12) 0%, rgba(18,10,11,0) 70%); border-radius: 50%; pointer-events: none; z-index: 0; }
+        .премиум-карта { background: linear-gradient(145deg, rgba(28,17,19,0.7) 0%, rgba(20,12,13,0.4) 100%); border: 1px solid rgba(255,255,255,0.03); backdrop-filter: blur(24px); transition: all 0.3s; }
+        .премиум-карта:hover { border-color: rgba(240,168,174,0.15); transform: translateY(-2px); }
+        .tab-active { background-color: rgba(240,168,174,0.08); border-color: rgba(240,168,174,0.3); color: #F7F3F0; }
+        .инпут-блок { display: flex; align-items: center; background-color: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.75rem; transition: all 0.25s; }
+        .инпут-блок:focus-within { border-color: rgba(184,98,106,0.5); background-color: rgba(255,255,255,0.025); box-shadow: 0 0 12px rgba(184,98,106,0.15); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #120A0B; }
+        ::-webkit-scrollbar-thumb { background: #2B1E20; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative antialiased">
+
+    <div class="световой-узел top-[-10%] right-[-10%]"></div>
+    <div class="световой-узел bottom-[10%] left-[-10%]"></div>
+
+    <header class="sticky top-0 z-40 bg-космос/70 backdrop-blur-xl border-b border-white/[0.03]">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center max-w-6xl">
+            <a href="index.html" class="font-display text-lg sm:text-xl tracking-wider font-black text-кремТекст flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 bg-винныйАкцент shadow-[0_0_12px_#F0A8AE] rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <div class="flex items-center space-x-6 sm:space-x-8">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-приглушенный hover:text-кремТекст transition-colors">Проекты</a>
+                <button id="logoutBtn" class="text-приглушенный hover:text-винныйАкцент transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-bold">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Выйти</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-10 relative z-10 max-w-6xl flex-grow">
+        
+        <!-- Приветствие и баланс -->
+        <div class="премиум-карта rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                <div class="relative">
+                    <div class="w-20 h-20 rounded-full bg-white/[0.03] border-2 border-white/10 flex items-center justify-center overflow-hidden">
+                        <img id="avatarPreview" src="" alt="Аватар" class="w-full h-full object-cover hidden">
+                        <i data-lucide="user" class="w-8 h-8 text-приглушенный"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 id="userNameHeading" class="font-display text-2xl sm:text-3xl font-black text-кремТекст tracking-tight">Заказчик</h1>
+                    <span class="bg-white/[0.04] px-2.5 py-1 rounded-md text-xs text-приглушенный">Платёж готов</span>
+                </div>
+            </div>
+            <button id="editProfileBtn" class="w-full sm:w-auto bg-white/[0.03] border border-white/[0.06] text-кремТекст px-5 py-3 rounded-xl hover:bg-винныйАкцент hover:text-космос transition-all text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2">
+                <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Настройки
+            </button>
+        </div>
+
+        <!-- Баланс и пополнение -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+            <div class="премиум-карта rounded-2xl p-6 flex justify-between items-center">
+                <div><p class="text-приглушенный text-[10px] uppercase tracking-widest font-bold">Доступно средств</p><p id="balance" class="text-3xl font-black text-винныйАкцент">0 BYN</p></div>
+                <div class="p-4 bg-винныйНеон/10 rounded-xl"><i data-lucide="wallet" class="w-6 h-6 text-винныйАкцент"></i></div>
+            </div>
+            <div class="премиум-карта rounded-2xl p-6 flex justify-between items-center">
+                <div><p class="text-приглушенный text-[10px] uppercase tracking-widest font-bold">Пополнить баланс</p><button id="depositBtn" class="mt-2 bg-кремТекст text-космос text-xs font-black px-4 py-2 rounded-xl hover:bg-винныйАкцент transition-all">➕ Пополнить</button></div>
+                <div class="p-4 bg-white/[0.02] rounded-xl"><i data-lucide="plus-circle" class="w-6 h-6 text-приглушенный"></i></div>
+            </div>
+        </div>
+
+        <!-- Кнопка создания заказа -->
+        <div class="flex justify-end mb-4">
+            <button id="createOrderBtn" class="bg-кремТекст text-космос text-xs font-black px-4 py-2 rounded-xl hover:bg-винныйАкцент transition-all flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Создать заказ
+            </button>
+        </div>
+
+        <!-- Вкладки -->
+        <div class="bg-темныйБлок/40 border border-white/[0.03] p-1.5 rounded-2xl flex flex-wrap gap-1.5 mb-8">
+            <button class="tab-btn flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-приглушенный rounded-xl transition-all" data-tab="myOrders">Мои заказы</button>
+            <button class="tab-btn flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-приглушенный rounded-xl transition-all" data-tab="responses">Отклики</button>
+            <button class="tab-btn flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest text-приглушенный rounded-xl transition-all" data-tab="finance">Финансы</button>
+        </div>
+
+        <div class="mt-4">
+            <div id="myOrdersTab" class="tab-content space-y-4 animate-fade-in"></div>
+            <div id="responsesTab" class="tab-content hidden space-y-4"></div>
+            <div id="financeTab" class="tab-content hidden">
+                <div class="премиум-карта rounded-2xl p-6">
+                    <h3 class="font-display font-black text-lg mb-4">История операций</h3>
+                    <div id="transactionsList" class="divide-y divide-white/[0.04]"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модалка создания заказа -->
+    <div id="createOrderModal" class="fixed inset-0 z-50 bg-космос/95 backdrop-blur-xl hidden flex items-center justify-center p-4">
+        <div class="bg-темныйБлок border border-white/[0.06] rounded-2xl w-full max-w-lg p-6">
+            <h3 class="font-display font-black text-lg mb-4">Новый заказ</h3>
+            <form id="createOrderForm">
+                <div class="инпут-блок mb-3"><input type="text" id="orderTitle" placeholder="Название" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div>
+                <div class="инпут-блок mb-3"><textarea id="orderDesc" placeholder="Описание" rows="3" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none resize-none"></textarea></div>
+                <div class="инпут-блок mb-3"><input type="number" id="orderBudget" placeholder="Бюджет (BYN)" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div>
+                <div class="инпут-блок mb-3"><input type="datetime-local" id="orderDeadline" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div>
+                <div class="инпут-блок mb-4">
+                    <select id="orderCategory" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none">
+                        <option value="">Загрузка категорий...</option>
+                    </select>
+                </div>
+                <div id="orderError" class="text-винныйАкцент text-xs hidden mb-3"></div>
+                <button type="submit" class="w-full bg-кремТекст text-космос font-black py-3 rounded-xl hover:bg-винныйАкцент transition-all">Опубликовать</button>
+                <button type="button" id="closeOrderModal" class="w-full mt-2 text-приглушенный text-xs">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка профиля -->
+    <div id="profileModal" class="fixed inset-0 z-50 bg-космос/95 backdrop-blur-xl hidden flex items-center justify-center p-4">
+        <div class="bg-темныйБлок border border-white/[0.06] rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-white/[0.04] flex justify-between items-center">
+                <h3 class="font-display font-black">Настройки профиля</h3>
+                <button id="closeProfileModal" class="p-1 hover:bg-white/[0.04] rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <form id="profileForm" class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] uppercase font-bold">ФИО</label>
+                        <div class="инпут-блок"><input type="text" id="fullName" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] uppercase font-bold">Телефон</label>
+                        <div class="инпут-блок"><input type="text" id="phone" class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"></div>
+                    </div>
+                    <hr class="border-white/[0.05]">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] uppercase font-bold">Новый email</label>
+                        <input type="email" id="newEmail" class="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm">
+                        <input type="password" id="emailPassword" placeholder="Текущий пароль" class="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm mt-2">
+                        <button type="button" id="changeEmailBtn" class="text-xs text-винныйАкцент">Сменить email</button>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] uppercase font-bold">Смена пароля</label>
+                        <input type="password" id="oldPassword" placeholder="Старый пароль" class="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm">
+                        <input type="password" id="newPassword" placeholder="Новый пароль" class="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm">
+                        <input type="password" id="confirmPassword" placeholder="Подтверждение" class="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm">
+                        <button type="button" id="changePasswordBtn" class="text-xs text-винныйАкцент">Сменить пароль</button>
+                    </div>
+                    <div id="profileMessage" class="text-xs text-винныйАкцент hidden bg-винныйНеон/10 p-3 rounded-xl"></div>
+                    <button type="submit" class="w-full bg-кремТекст text-космос font-black text-xs uppercase py-3 rounded-xl hover:bg-винныйАкцент transition-all">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка пополнения баланса -->
+    <div id="depositModal" class="fixed inset-0 z-50 bg-космос/95 backdrop-blur-xl hidden flex items-center justify-center p-4">
+        <div class="bg-темныйБлок border border-white/[0.06] rounded-2xl w-full max-w-md p-6">
+            <h3 class="font-display font-black text-lg mb-4">Пополнение баланса</h3>
+            <div class="инпут-блок mb-4"><input type="number" id="depositAmount" placeholder="Сумма (BYN)" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div>
+            <div id="depositError" class="text-винныйАкцент text-xs hidden mb-3"></div>
+            <button id="depositConfirmBtn" class="w-full bg-кремТекст text-космос font-black py-3 rounded-xl hover:bg-винныйАкцент transition-all">Пополнить</button>
+            <button id="closeDepositModal" class="w-full mt-3 text-приглушенный text-xs">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token) window.location.href = 'login.html';
+        if (user.role !== 'Customer') { alert('Эта страница только для заказчиков'); window.location.href = 'index.html'; }
+
+        document.getElementById('userNameHeading').innerText = user.fullName || 'Заказчик';
+        document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+
+        // Вкладки
+        let currentTab = 'myOrders';
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = {
+            myOrders: document.getElementById('myOrdersTab'),
+            responses: document.getElementById('responsesTab'),
+            finance: document.getElementById('financeTab')
+        };
+        function switchTab(tabId) {
+            Object.values(contents).forEach(c => c.classList.add('hidden'));
+            contents[tabId].classList.remove('hidden');
+            tabs.forEach(btn => {
+                if (btn.dataset.tab === tabId) btn.classList.add('tab-active');
+                else btn.classList.remove('tab-active');
+            });
+            currentTab = tabId;
+            if (tabId === 'myOrders') loadMyOrders();
+            if (tabId === 'responses') loadAllResponses();
+            if (tabId === 'finance') { loadTransactions(); loadBalance(); }
+        }
+        tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+        switchTab('myOrders');
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/Finances', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { const data = await res.json(); document.getElementById('balance').innerText = `${data.balance.toFixed(2)} BYN`; }
+            } catch(e) {}
+        }
+
+        // Мои заказы
+        async function loadMyOrders() {
+            const container = document.getElementById('myOrdersTab');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-приглушенный">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/Orders', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    let orders = await res.json();
+                    orders = orders.items || orders;
+                    if (!orders.length) { container.innerHTML = '<div class="премиум-карта p-8 text-center">У вас пока нет заказов</div>'; return; }
+                    container.innerHTML = orders.map(order => `
+                        <div class="премиум-карта rounded-xl p-5">
+                            <div class="flex justify-between items-start flex-wrap gap-3">
+                                <div><h3 class="font-bold">${escapeHtml(order.title)}</h3><p class="text-приглушенный text-sm">${escapeHtml(order.description)}</p>
+                                <div class="flex gap-3 mt-2 text-xs"><span>💰 ${order.budget} BYN</span><span>📅 ${new Date(order.deadline).toLocaleDateString()}</span><span>Статус: ${order.status}</span></div></div>
+                                <div class="flex gap-2">
+                                    ${order.status === 'Open' ? `<button class="view-responses-btn bg-винныйАкцент/20 text-винныйАкцент px-3 py-1 rounded text-xs" data-id="${order.id}">Отклики</button>
+                                                               <button class="delete-order-btn bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs" data-id="${order.id}">Удалить</button>` : ''}
+                                    ${order.status === 'InProgress' ? `<button class="complete-order-btn bg-green-500/20 text-green-400 px-3 py-1 rounded text-xs" data-id="${order.id}">Завершить</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.querySelectorAll('.view-responses-btn').forEach(btn => btn.addEventListener('click', () => { switchTab('responses'); }));
+                    document.querySelectorAll('.delete-order-btn').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Удалить?')){ await fetch(`/api/Orders/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadMyOrders(); } }));
+                    document.querySelectorAll('.complete-order-btn').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Завершить заказ? Средства перейдут фрилансеру')){ await fetch(`/api/Orders/${btn.dataset.id}/complete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadMyOrders(); } }));
+                } else throw new Error();
+            } catch(e) { container.innerHTML = '<div class="text-center text-red-400">Ошибка загрузки</div>'; }
+        }
+
+        // Отклики на все заказы
+        async function loadAllResponses() {
+            const container = document.getElementById('responsesTab');
+            container.innerHTML = '<div class="text-center py-6">Загрузка...</div>';
+            try {
+                const ordersRes = await fetch('/api/Orders', { headers: { 'Authorization': `Bearer ${token}` } });
+                let orders = await ordersRes.json();
+                orders = orders.items || orders;
+                let allResponses = [];
+                for (let order of orders) {
+                    const respRes = await fetch(`/api/Responses/order/${order.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (respRes.ok) {
+                        let responses = await respRes.json();
+                        responses.forEach(r => r.orderTitle = order.title);
+                        allResponses.push(...responses);
+                    }
+                }
+                if (!allResponses.length) { container.innerHTML = '<div class="премиум-карта p-8 text-center">Нет откликов на ваши заказы</div>'; return; }
+                container.innerHTML = allResponses.map(r => `
+                    <div class="премиум-карта rounded-xl p-5">
+                        <div><strong>Заказ:</strong> ${escapeHtml(r.orderTitle)}</div>
+                        <div><strong>Фрилансер:</strong> ${escapeHtml(r.freelancerName)}</div>
+                        <div><strong>Предложено:</strong> ${r.proposedPrice} BYN</div>
+                        <div class="mt-2">${r.coverLetter}</div>
+                        <div class="mt-3 flex gap-2">
+                            ${r.status === 'Pending' ? `<button class="accept-response bg-green-500/20 text-green-400 px-3 py-1 rounded text-xs" data-response="${r.id}" data-order="${r.orderId}">Принять</button>` : ''}
+                            <span class="text-xs">Статус: ${getStatus(r.status)}</span>
+                        </div>
+                    </div>
+                `).join('');
+                document.querySelectorAll('.accept-response').forEach(btn => btn.addEventListener('click', async () => {
+                    const respId = btn.dataset.response;
+                    await fetch(`/api/Responses/${respId}/accept`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                    alert('Отклик принят, заказ передан фрилансеру');
+                    loadAllResponses(); loadMyOrders();
+                }));
+            } catch(e) { container.innerHTML = '<div class="text-red-400">Ошибка</div>'; }
+        }
+
+        async function loadTransactions() {
+            const container = document.getElementById('transactionsList');
+            try {
+                const res = await fetch('/api/Finances/transactions', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    let tx = await res.json();
+                    if (!tx.length) { container.innerHTML = '<div class="text-приглушенный text-sm py-4">Нет операций</div>'; return; }
+                    container.innerHTML = tx.map(t => `<div class="flex justify-between py-3"><span>${t.type}</span><span class="font-mono">${t.amount} BYN</span><span class="text-xs text-приглушенный">${new Date(t.date).toLocaleDateString()}</span></div>`).join('');
+                } else container.innerHTML = '<div class="text-приглушенный">Ошибка загрузки</div>';
+            } catch(e) { container.innerHTML = '<div class="text-приглушенный">Ошибка сети</div>'; }
+        }
+
+        // Пополнение
+        document.getElementById('depositBtn').addEventListener('click', () => document.getElementById('depositModal').classList.remove('hidden'));
+        document.getElementById('closeDepositModal').addEventListener('click', () => document.getElementById('depositModal').classList.add('hidden'));
+        document.getElementById('depositConfirmBtn').addEventListener('click', async () => {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            if (isNaN(amount) || amount <= 0) { alert('Введите сумму'); return; }
+            try {
+                const res = await fetch('/api/Finances/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ amount }) });
+                if (res.ok) { alert('Баланс пополнен'); loadBalance(); document.getElementById('depositModal').classList.add('hidden'); }
+                else alert('Ошибка');
+            } catch(e) { alert('Ошибка сети'); }
+        });
+
+        // Создание заказа
+        let categoriesLoaded = false;
+        async function loadCategories() {
+            const select = document.getElementById('orderCategory');
+            select.innerHTML = '<option value="">Загрузка...</option>';
+            try {
+                const res = await fetch('/api/Admin/public/categories');
+                if (res.ok) {
+                    const cats = await res.json();
+                    select.innerHTML = '';
+                    cats.forEach(cat => {
+                        select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                    });
+                    categoriesLoaded = true;
+                } else {
+                    select.innerHTML = '<option value="">Ошибка загрузки категорий</option>';
+                }
+            } catch(e) {
+                select.innerHTML = '<option value="">Ошибка сети</option>';
+            }
+        }
+        document.getElementById('createOrderBtn').addEventListener('click', () => {
+            loadCategories();
+            document.getElementById('createOrderModal').classList.remove('hidden');
+        });
+        document.getElementById('closeOrderModal').addEventListener('click', () => {
+            document.getElementById('createOrderModal').classList.add('hidden');
+        });
+        document.getElementById('createOrderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('orderTitle').value;
+            const description = document.getElementById('orderDesc').value;
+            const budget = parseFloat(document.getElementById('orderBudget').value);
+            const deadline = new Date(document.getElementById('orderDeadline').value).toISOString();
+            const categoryId = parseInt(document.getElementById('orderCategory').value);
+            const errorDiv = document.getElementById('orderError');
+            errorDiv.classList.add('hidden');
+            if (!title || !description || isNaN(budget) || !deadline || isNaN(categoryId)) {
+                errorDiv.textContent = 'Заполните все поля';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            try {
+                const res = await fetch('/api/Orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ title, description, budget, deadline, categoryId })
+                });
+                if (res.ok) {
+                    alert('Заказ создан!');
+                    document.getElementById('createOrderModal').classList.add('hidden');
+                    loadMyOrders();
+                } else {
+                    const err = await res.text();
+                    errorDiv.textContent = err || 'Ошибка создания';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch(e) {
+                errorDiv.textContent = 'Ошибка сети';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Редактирование профиля
+        async function loadProfileData() {
+            try {
+                const res = await fetch('/api/Users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { const data = await res.json(); document.getElementById('fullName').value = data.fullName || ''; document.getElementById('phone').value = data.phone || ''; }
+            } catch(e) {}
+        }
+        document.getElementById('editProfileBtn').addEventListener('click', () => { loadProfileData(); document.getElementById('profileModal').classList.remove('hidden'); });
+        document.getElementById('closeProfileModal').addEventListener('click', () => document.getElementById('profileModal').classList.add('hidden'));
+        document.getElementById('changeEmailBtn').addEventListener('click', async () => {
+            const newEmail = document.getElementById('newEmail').value.trim();
+            const password = document.getElementById('emailPassword').value;
+            if (!newEmail || !password) { alert('Заполните поля'); return; }
+            const res = await fetch('/api/Users/email', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ newEmail, password }) });
+            if (res.ok) { alert('Email изменён, перезайдите'); localStorage.clear(); window.location.href = 'login.html'; }
+            else alert('Ошибка');
+        });
+        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+            const oldPass = document.getElementById('oldPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (!oldPass || !newPass || newPass !== confirm) { alert('Пароли не совпадают'); return; }
+            const res = await fetch('/api/Users/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass }) });
+            if (res.ok) { alert('Пароль изменён, перезайдите'); localStorage.clear(); window.location.href = 'login.html'; }
+            else alert('Ошибка');
+        });
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value;
+            const phone = document.getElementById('phone').value;
+            await fetch('/api/Users/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ fullName, phone }) });
+            alert('Профиль обновлён');
+            document.getElementById('profileModal').classList.add('hidden');
+        });
+
+        function getStatus(s) { if(s==='Pending') return 'На рассмотрении'; if(s==='Accepted') return 'Принят'; return s; }
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+        loadBalance();
+    </script>
+</body>
+</html>

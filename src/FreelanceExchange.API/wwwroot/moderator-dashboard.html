@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Панель модератора | FreelanceExchange</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        .tab-active {
+            background-color: rgba(91,104,124,0.1);
+            border-color: #5B687C !important;
+            color: #161B2F !important;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #F7F3ED; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        /* Кастомные модальные окна */
+        .modal-overlay-close { cursor: pointer; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            border-left: 4px solid;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.info { border-left-color: #3b82f6; }
+        @media (max-width: 768px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .премиум-карта { padding: 1rem !important; }
+            .tab-btn { font-size: 10px !important; padding: 0.5rem 0.75rem !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative antialiased">
+    <div class="световой-узел top-[-10%] right-[-10%]"></div>
+    <div class="световой-узел bottom-[10%] left-[-10%]"></div>
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- Кастомный confirm -->
+    <div id="customConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-white/80 backdrop-blur-md p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 max-w-md w-full relative shadow-xl">
+            <button class="close-modal-btn absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 text-[#5B687C]">
+                <i data-lucide="help-circle" class="w-6 h-6"></i>
+                <h3 class="font-display font-black text-lg text-[#161B2F]">Подтверждение действия</h3>
+            </div>
+            <p id="confirmModalText" class="text-sm text-[#5A4A44] leading-relaxed my-4"></p>
+            <div class="flex gap-3 justify-end pt-2">
+                <button id="confirmCancelBtn" class="px-4 py-2.5 rounded-xl border border-[#D4CDCB] text-xs font-bold uppercase tracking-wider text-[#5A4A44] hover:bg-[#F7F3ED] transition-all">Отмена</button>
+                <button id="confirmSuccessBtn" class="px-5 py-2.5 rounded-xl bg-[#5B687C] text-white font-black text-xs uppercase tracking-wider hover:bg-[#3A4454] transition-all shadow-md">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center max-w-6xl">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <div class="flex items-center space-x-6">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Проекты</a>
+                <div id="authBlock" class="flex items-center space-x-4"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-10 relative z-10 max-w-6xl flex-grow">
+        <div class="mb-8">
+            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#F7F3ED] border border-[#D4CDCB] text-[10px] uppercase font-black tracking-widest text-[#5A4A44] mb-2">Internal Security Service</div>
+            <h1 class="font-display text-3xl font-black text-[#161B2F] tracking-tight">Панель модератора</h1>
+            <p class="text-[#5A4A44] text-sm mt-0.5 font-light">Управление диспутами, модерация заказов, пользователи</p>
+        </div>
+
+        <div class="bg-white border border-[#D4CDCB] p-1.5 rounded-2xl flex flex-wrap gap-1 mb-8 shadow-sm">
+            <button class="tab-btn flex-1 justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="disputes"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Диспуты</button>
+            <button class="tab-btn flex-1 justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="moderation"><i data-lucide="clipboard-check" class="w-3.5 h-3.5"></i> Модерация заказов</button>
+            <button class="tab-btn flex-1 justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="users"><i data-lucide="users" class="w-3.5 h-3.5"></i> Пользователи</button>
+            <button class="tab-btn flex-1 justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="orders"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Заказы</button>
+            <button class="tab-btn flex-1 justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="stats"><i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i> Статистика</button>
+        </div>
+
+        <!-- Диспуты -->
+        <div id="disputesTab" class="tab-content space-y-4 hidden">
+            <div class="премиум-карта rounded-2xl p-6">
+                <div class="border-b border-[#D4CDCB] pb-3 mb-4"><h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F]">Активные арбитражные диспуты</h3></div>
+                <div id="disputesList" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Модерация заказов -->
+        <div id="moderationTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта rounded-2xl p-6">
+                <div class="flex justify-between items-center border-b border-[#D4CDCB] pb-3 mb-4">
+                    <h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F]">Заказы, ожидающие модерации</h3>
+                    <button id="refreshPendingBtn" class="bg-[#F7F3ED] border border-[#D4CDCB] text-[#5A4A44] px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#EFD8D6] transition-all flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Обновить</button>
+                </div>
+                <div id="pendingOrdersList" class="space-y-3 max-h-[500px] overflow-y-auto custom-scroll"></div>
+            </div>
+        </div>
+
+        <!-- Пользователи -->
+        <div id="usersTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта rounded-2xl p-6">
+                <div class="border-b border-[#D4CDCB] pb-3 mb-4"><h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F]">Поиск пользователя</h3></div>
+                <div class="flex flex-col sm:flex-row gap-2 mb-6">
+                    <div class="инпут-блок flex-1"><input type="text" id="searchUserInput" placeholder="Введите Email или ФИО пользователя..." class="w-full bg-transparent px-4 py-3 text-sm outline-none text-[#161B2F] placeholder:text-[#5A4A44]/30"></div>
+                    <button id="searchUserBtn" class="bg-[#5B687C] text-white hover:bg-[#3A4454] px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-[0.98]">Найти</button>
+                </div>
+                <div id="userSearchResult" class="space-y-3 mb-6"></div>
+                <hr class="border-[#D4CDCB] my-6">
+                <div class="border-b border-[#D4CDCB] pb-3 mb-4"><h3 class="font-display font-black text-sm uppercase tracking-wider text-[#5A4A44]">Глобальный список (первые 20)</h3></div>
+                <div id="allUsersList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll pr-1"></div>
+            </div>
+        </div>
+
+        <!-- Заказы -->
+        <div id="ordersTab" class="tab-content hidden space-y-4">
+            <div class="премиум-карта rounded-2xl p-6">
+                <div class="border-b border-[#D4CDCB] pb-3 mb-4"><h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F]">Все зарегистрированные заказы</h3></div>
+                <div id="ordersList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll pr-1"></div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div id="statsTab" class="tab-content hidden space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="премиум-карта rounded-2xl p-6">
+                    <h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Общая статистика платформы</h3>
+                    <div class="space-y-2 text-[#5A4A44]">
+                        <div class="flex justify-between"><span>Пользователей:</span><span id="statUsers" class="font-bold text-[#161B2F]">-</span></div>
+                        <div class="flex justify-between"><span>Заказов всего:</span><span id="statOrders" class="font-bold text-[#161B2F]">-</span></div>
+                        <div class="flex justify-between"><span>Завершённых заказов:</span><span id="statCompleted" class="font-bold text-[#161B2F]">-</span></div>
+                        <div class="flex justify-between"><span>Оборот (BYN):</span><span id="statTurnover" class="font-bold text-[#161B2F]">-</span></div>
+                        <div class="flex justify-between"><span>Открытых диспутов:</span><span id="statDisputes" class="font-bold text-[#161B2F]">-</span></div>
+                    </div>
+                </div>
+                <div class="премиум-карта rounded-2xl p-6">
+                    <h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Действия модератора</h3>
+                    <p class="text-sm text-[#5A4A44]">Управление диспутами, блокировка пользователей, модерация заказов.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модалка решения диспута -->
+    <div id="resolveModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl">
+            <button class="close-modal-btn absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 text-[#5B687C] border-b border-[#D4CDCB] pb-3">
+                <i data-lucide="scale" class="w-5 h-5"></i>
+                <h3 class="font-display font-black text-base uppercase tracking-wide text-[#161B2F]">Вынесение вердикта</h3>
+            </div>
+            <input type="hidden" id="resolveDisputeId">
+            <div class="space-y-2 mt-4">
+                <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">Решение по финансовому диспуту</label>
+                <select id="resolutionSelect" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-3 text-sm text-[#161B2F] outline-none focus:border-[#5B687C] transition-all">
+                    <option value="Customer">В пользу заказчика (полный возврат средств)</option>
+                    <option value="Freelancer">В пользу фрилансера (выплата за работу)</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button id="closeResolveModal" class="flex-1 bg-white border border-[#D4CDCB] text-[#5A4A44] text-xs uppercase tracking-widest font-black py-3.5 rounded-xl hover:bg-[#F7F3ED] transition-colors">Отмена</button>
+                <button id="confirmResolveBtn" class="flex-1 bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-[#3A4454] transition-all shadow-md">Закрыть диспут</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка отклонения заказа -->
+    <div id="rejectModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden items-center justify-center p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl">
+            <button class="close-modal-btn absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 text-[#DBA1A2] border-b border-[#D4CDCB] pb-3">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <h3 class="font-display font-black text-base uppercase tracking-wide text-[#161B2F]">Отклонение заказа</h3>
+            </div>
+            <input type="hidden" id="rejectOrderId">
+            <div class="space-y-2 mt-4">
+                <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">Причина отклонения</label>
+                <textarea id="rejectReason" rows="3" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-3 text-sm text-[#161B2F] outline-none focus:border-[#5B687C] resize-none" placeholder="Укажите причину отказа..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button id="closeRejectModal" class="flex-1 bg-white border border-[#D4CDCB] text-[#5A4A44] text-xs uppercase tracking-widest font-black py-3.5 rounded-xl hover:bg-[#F7F3ED] transition-colors">Отмена</button>
+                <button id="confirmRejectBtn" class="flex-1 bg-[#DBA1A2] text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-[#C08A8B] transition-all shadow-md">Отклонить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5 ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i><span class="text-sm text-[#161B2F]">${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+
+        // Кастомный confirm
+        function askCustomConfirm(text, onConfirm) {
+            const modal = document.getElementById('customConfirmModal');
+            document.getElementById('confirmModalText').innerText = text;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const successBtn = document.getElementById('confirmSuccessBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+            const cleanup = () => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                successBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+            successBtn.onclick = () => { onConfirm(); cleanup(); };
+            cancelBtn.onclick = cleanup;
+        }
+
+        // Закрытие модалок по фону и крестику
+        function setupModalClose(modalId, closeBtnSelector = '.close-modal-btn') {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+            const closeBtn = modal.querySelector(closeBtnSelector);
+            if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        }
+
+        setupModalClose('customConfirmModal', '.close-modal-btn');
+        setupModalClose('resolveModal', '.close-modal-btn');
+        setupModalClose('rejectModal', '.close-modal-btn');
+
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+        if (!token) window.location.href = 'login.html';
+        if (user.role !== 'Moderator' && user.role !== 'Admin') window.location.href = 'index.html';
+        authBlock.innerHTML = `
+            <div class="flex flex-col text-right">
+                <span class="text-[#8D8F8E] text-[9px] uppercase tracking-wider font-bold">Уровень прав</span>
+                <span class="text-[#5B687C] text-xs font-bold">${escapeHtml(user.fullName)} (${user.role})</span>
+            </div>
+            <a href="index.html" class="bg-[#F7F3ED] border border-[#D4CDCB] hover:bg-[#EFD8D6] text-[#5A4A44] px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors">Главная</a>
+            <button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] p-1.5 transition-colors"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        `;
+        lucide.createIcons();
+        document.getElementById('logoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+
+        let currentTab = 'disputes';
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = {
+            disputes: document.getElementById('disputesTab'),
+            moderation: document.getElementById('moderationTab'),
+            users: document.getElementById('usersTab'),
+            orders: document.getElementById('ordersTab'),
+            stats: document.getElementById('statsTab')
+        };
+        function switchTab(tabId) {
+            Object.values(contents).forEach(c => c.classList.add('hidden'));
+            contents[tabId].classList.remove('hidden');
+            tabs.forEach(btn => {
+                if (btn.dataset.tab === tabId) btn.classList.add('tab-active');
+                else btn.classList.remove('tab-active');
+            });
+            currentTab = tabId;
+            if (tabId === 'disputes') loadDisputes();
+            if (tabId === 'moderation') loadPendingOrders();
+            if (tabId === 'users') loadAllUsers();
+            if (tabId === 'orders') loadAllOrders();
+            if (tabId === 'stats') loadStats();
+        }
+        tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+        switchTab('disputes');
+
+        // --- ДИСПУТЫ ---
+        async function loadDisputes() {
+            const container = document.getElementById('disputesList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка диспутов...</div>';
+            try {
+                const res = await fetch('/api/Disputes', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const disputes = await res.json();
+                    if (!disputes.length) { container.innerHTML = '<div class="text-center py-8 text-sm text-[#5A4A44] border border-dashed border-[#D4CDCB] rounded-xl">Нет открытых диспутов</div>'; return; }
+                    container.innerHTML = disputes.map(d => `
+                        <div class="bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl p-4">
+                            <div class="flex justify-between items-start flex-wrap gap-3">
+                                <div class="space-y-1">
+                                    <div class="text-xs font-semibold text-[#161B2F]"><span class="text-[#5B687C] font-mono bg-[#D4CDCB]/30 px-2 py-0.5 rounded mr-1">ID Заказа #${d.orderId}</span> — ${escapeHtml(d.orderTitle)}</div>
+                                    <div class="text-xs text-[#5A4A44]">Инициатор: <span class="text-[#161B2F]">${escapeHtml(d.initiatorName)}</span></div>
+                                    <div class="text-xs text-[#5A4A44]">Причина: <span class="text-[#DBA1A2] italic">"${escapeHtml(d.reason)}"</span></div>
+                                    <div><span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${d.status === 'Open' ? 'bg-amber-500/10 text-amber-600' : 'bg-green-500/10 text-green-600'}">${d.status === 'Open' ? 'На рассмотрении' : 'Разрешён'}</span></div>
+                                </div>
+                                ${d.status === 'Open' ? `<button class="resolve-btn bg-[#5B687C] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#3A4454] transition-colors" data-id="${d.id}">Решить</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    document.querySelectorAll('.resolve-btn').forEach(btn => btn.addEventListener('click', () => { document.getElementById('resolveDisputeId').value = btn.dataset.id; document.getElementById('resolveModal').classList.remove('hidden'); }));
+                    lucide.createIcons();
+                } else { container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки диспутов</div>'; }
+            } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка сети</div>'; }
+        }
+        document.getElementById('confirmResolveBtn')?.addEventListener('click', async () => {
+            const disputeId = document.getElementById('resolveDisputeId').value;
+            const resolution = document.getElementById('resolutionSelect').value;
+            try {
+                const res = await fetch(`/api/Disputes/${disputeId}/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ resolution }) });
+                if (res.ok) { showToast('Диспут закрыт', 'success'); document.getElementById('resolveModal').classList.add('hidden'); loadDisputes(); }
+                else showToast('Ошибка при закрытии диспута', 'error');
+            } catch(e) { showToast('Сетевая ошибка', 'error'); }
+        });
+        document.getElementById('closeResolveModal')?.addEventListener('click', () => document.getElementById('resolveModal').classList.add('hidden'));
+
+        // --- МОДЕРАЦИЯ ЗАКАЗОВ ---
+        async function loadPendingOrders() {
+            const container = document.getElementById('pendingOrdersList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/Moderation/orders/pending', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const orders = await res.json();
+                if (!orders.length) { container.innerHTML = '<div class="text-center py-8 text-sm text-[#5A4A44] border border-dashed border-[#D4CDCB] rounded-xl">Нет заказов на модерации</div>'; return; }
+                container.innerHTML = orders.map(o => `
+                    <div class="bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl p-4">
+                        <div class="flex flex-col md:flex-row justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="font-bold text-base text-[#161B2F]">${escapeHtml(o.title)}</div>
+                                <p class="text-xs text-[#5A4A44] mt-1 line-clamp-2">${escapeHtml(o.description)}</p>
+                                <div class="flex flex-wrap gap-3 mt-2 text-xs">
+                                    <span class="text-[#5B687C] font-bold">💰 ${o.budget} BYN</span>
+                                    <span>📅 до ${new Date(o.deadline).toLocaleDateString()}</span>
+                                    <span>👤 Заказчик: ${escapeHtml(o.customerName)}</span>
+                                    ${o.freelancerName ? `<span>👨‍💻 Выбран фрилансер: ${escapeHtml(o.freelancerName)}</span>` : '<span>⚡ Фрилансер ещё не выбран</span>'}
+                                </div>
+                            </div>
+                            <div class="flex gap-2 items-start">
+                                <button class="approve-order bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-600 transition-colors" data-id="${o.id}">Одобрить</button>
+                                <button class="reject-order bg-[#DBA1A2] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#C08A8B] transition-colors" data-id="${o.id}">Отклонить</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+                document.querySelectorAll('.approve-order').forEach(btn => btn.addEventListener('click', async () => {
+                    askCustomConfirm('Одобрить заказ? Фрилансер получит уведомление и доступ к работе.', async () => {
+                        const res = await fetch(`/api/Moderation/orders/${btn.dataset.id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                        if (res.ok) { showToast('Заказ одобрен', 'success'); loadPendingOrders(); } else showToast('Ошибка при одобрении', 'error');
+                    });
+                }));
+                document.querySelectorAll('.reject-order').forEach(btn => btn.addEventListener('click', () => {
+                    document.getElementById('rejectOrderId').value = btn.dataset.id;
+                    document.getElementById('rejectModal').classList.remove('hidden');
+                }));
+            } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки</div>'; }
+        }
+        document.getElementById('refreshPendingBtn')?.addEventListener('click', () => loadPendingOrders());
+
+        // --- ПОЛЬЗОВАТЕЛИ ---
+        async function loadAllUsers() {
+            const container = document.getElementById('allUsersList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/Admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const users = await res.json();
+                    if (!users.length) { container.innerHTML = '<div class="text-center">Нет пользователей</div>'; return; }
+                    renderUserCards(users.slice(0, 20), container);
+                } else { container.innerHTML = '<div class="text-red-500">Ошибка загрузки</div>'; }
+            } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка сети</div>'; }
+        }
+        function renderUserCards(users, target) {
+            target.innerHTML = users.map(u => `
+                <div class="bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl p-3 flex justify-between items-center flex-wrap gap-3">
+                    <div>
+                        <div class="font-bold text-[#161B2F]">${escapeHtml(u.fullName)}</div>
+                        <div class="text-xs text-[#5A4A44]">${u.email} (${u.role})</div>
+                        <div class="text-[10px] mt-1 ${u.isBlocked ? 'text-red-500' : 'text-green-600'}">${u.isBlocked ? '🔒 Заблокирован' : '🟢 Активен'}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${!u.isBlocked ? `<button class="block-user bg-red-500/20 text-red-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-colors" data-id="${u.id}">Заблокировать</button>` : `<button class="unblock-user bg-green-500/20 text-green-700 px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-500/30 transition-colors" data-id="${u.id}">Разблокировать</button>`}
+                    </div>
+                </div>
+            `).join('');
+            target.querySelectorAll('.block-user').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/block`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsers(); showToast('Пользователь заблокирован', 'success'); }));
+            target.querySelectorAll('.unblock-user').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Admin/users/${btn.dataset.id}/unblock`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsers(); showToast('Пользователь разблокирован', 'success'); }));
+        }
+        document.getElementById('searchUserBtn')?.addEventListener('click', async () => {
+            const query = document.getElementById('searchUserInput').value.trim();
+            if (!query) return;
+            try {
+                const res = await fetch('/api/Admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const users = await res.json();
+                    const found = users.find(u => u.email.toLowerCase().includes(query.toLowerCase()) || u.fullName.toLowerCase().includes(query.toLowerCase()));
+                    const resultDiv = document.getElementById('userSearchResult');
+                    if (found) {
+                        resultDiv.innerHTML = `
+                            <div class="bg-[#FCF9F7] border border-[#5B687C]/30 rounded-xl p-4">
+                                <div class="flex justify-between items-center flex-wrap gap-3">
+                                    <div>
+                                        <div class="font-bold text-lg text-[#161B2F]">${escapeHtml(found.fullName)}</div>
+                                        <div class="text-sm text-[#5A4A44]">${found.email} | ${found.role}</div>
+                                        <div class="text-xs ${found.isBlocked ? 'text-red-500' : 'text-green-600'} mt-1">${found.isBlocked ? 'Заблокирован' : 'Активен'}</div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        ${!found.isBlocked ? `<button class="search-block-btn bg-red-500/20 text-red-600 px-3 py-1 rounded-lg text-xs font-bold" data-id="${found.id}">Заблокировать</button>` : `<button class="search-unblock-btn bg-green-500/20 text-green-700 px-3 py-1 rounded-lg text-xs font-bold" data-id="${found.id}">Разблокировать</button>`}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        resultDiv.querySelector('.search-block-btn')?.addEventListener('click', async () => { await fetch(`/api/Admin/users/${found.id}/block`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsers(); resultDiv.innerHTML = ''; document.getElementById('searchUserInput').value = ''; showToast('Заблокирован', 'success'); });
+                        resultDiv.querySelector('.search-unblock-btn')?.addEventListener('click', async () => { await fetch(`/api/Admin/users/${found.id}/unblock`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }); loadAllUsers(); resultDiv.innerHTML = ''; document.getElementById('searchUserInput').value = ''; showToast('Разблокирован', 'success'); });
+                    } else resultDiv.innerHTML = '<div class="text-red-500 p-2">Пользователь не найден</div>';
+                }
+            } catch(e) { resultDiv.innerHTML = '<div class="text-red-500 p-2">Ошибка поиска</div>'; }
+        });
+
+        // --- ВСЕ ЗАКАЗЫ ---
+        async function loadAllOrders() {
+            const container = document.getElementById('ordersList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/Orders?PageSize=1000', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    let data = await res.json();
+                    let orders = data.items || data;
+                    if (!orders.length) { container.innerHTML = '<div class="text-center py-8">Нет заказов</div>'; return; }
+                    container.innerHTML = orders.map(o => `
+                        <div class="bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl p-3.5 flex justify-between items-center flex-wrap gap-4">
+                            <div class="space-y-0.5">
+                                <div class="text-sm font-semibold text-[#161B2F]"><strong>${escapeHtml(o.title)}</strong> <span class="text-[11px] text-[#8D8F8E]">(ID: ${o.id})</span></div>
+                                <div class="text-xs text-[#5A4A44]">Заказчик: ${escapeHtml(o.customerName)} | Статус: <span class="text-[#5B687C] font-semibold">${o.status}</span></div>
+                                <div class="text-xs text-green-600">💰 ${o.budget} BYN</div>
+                            </div>
+                            <a href="project.html?id=${o.id}" target="_blank" class="bg-[#F7F3ED] border border-[#D4CDCB] px-3 py-1 rounded-lg text-xs text-[#5A4A44] hover:bg-[#EFD8D6] transition-colors">Карточка</a>
+                        </div>
+                    `).join('');
+                } else { container.innerHTML = '<div class="text-red-500">Ошибка загрузки</div>'; }
+            } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка сети</div>'; }
+        }
+
+        // --- СТАТИСТИКА ---
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/Admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const stats = await res.json();
+                    document.getElementById('statUsers').innerText = stats.totalUsers || '-';
+                    document.getElementById('statOrders').innerText = stats.totalOrders || '-';
+                    document.getElementById('statCompleted').innerText = stats.completedOrders || '-';
+                    document.getElementById('statTurnover').innerText = stats.totalTurnover || '-';
+                }
+                const disputesRes = await fetch('/api/Disputes', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (disputesRes.ok) {
+                    const disputes = await disputesRes.json();
+                    document.getElementById('statDisputes').innerText = disputes.filter(d => d.status === 'Open').length;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('confirmRejectBtn')?.addEventListener('click', async () => {
+            const orderId = document.getElementById('rejectOrderId').value;
+            const reason = document.getElementById('rejectReason').value;
+            if (!reason.trim()) { showToast('Укажите причину отклонения', 'error'); return; }
+            try {
+                const res = await fetch(`/api/Moderation/orders/${orderId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ reason })
+                });
+                if (res.ok) {
+                    showToast('Заказ отклонён', 'success');
+                    document.getElementById('rejectModal').classList.add('hidden');
+                    document.getElementById('rejectReason').value = '';
+                    loadPendingOrders();
+                } else showToast('Ошибка при отклонении', 'error');
+            } catch(e) { showToast('Сетевая ошибка', 'error'); }
+        });
+        document.getElementById('closeRejectModal')?.addEventListener('click', () => { document.getElementById('rejectModal').classList.add('hidden'); document.getElementById('rejectReason').value = ''; });
+    </script>
+</body>
+</html>

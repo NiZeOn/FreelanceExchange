@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Подписка | FreelanceExchange</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        втор: '#17181F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(16px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background-color: #5B687C;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+        .btn-primary:hover {
+            background-color: #3A4454;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -5px rgba(91,104,124,0.3);
+        }
+        @media (max-width: 768px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .btn-primary { padding: 0.5rem 1rem; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative antialiased">
+
+    <!-- декоративные световые узлы -->
+    <div class="световой-узел top-[-10%] right-[-10%] animate-pulse-slow"></div>
+    <div class="световой-узел bottom-[10%] left-[-10%] animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+
+    <!-- ШАПКА (единая, светлая) -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <nav class="hidden md:flex space-x-8">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#161B2F] hover:text-[#5B687C] transition-colors">Проекты</a>
+                <a href="tariffs.html" class="text-xs uppercase tracking-widest font-bold text-[#5B687C] transition-colors">Подписка</a>
+                <!-- Ссылка "Кабинет" будет показана только авторизованным пользователям (добавляется через js) -->
+                <a id="cabinetLink" href="#" class="text-xs uppercase tracking-widest font-bold text-[#161B2F] hover:text-[#5B687C] transition-colors hidden">Кабинет</a>
+            </nav>
+            <div id="authBlock" class="text-xs uppercase tracking-widest font-bold flex items-center space-x-6">
+                <!-- содержимое подставится скриптом -->
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-12 relative z-10 max-w-6xl flex-grow">
+        <div class="text-center mb-12 animate-fade-in-up">
+            <h1 class="font-display text-4xl sm:text-5xl font-black text-[#161B2F] tracking-tight">Подписка</h1>
+            <p class="text-[#5A4A44] text-sm mt-2">Повысьте свои возможности на платформе</p>
+        </div>
+
+        <div id="plansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- карточки тарифов загружаются динамически -->
+        </div>
+
+        <div id="subscriptionStatus" class="mt-12 премиум-карта rounded-2xl p-6 text-center hidden animate-fade-in-up">
+            <!-- информация об активной подписке -->
+        </div>
+    </main>
+
+    <!-- ПОДВАЛ (единый) -->
+    <footer class="py-12 border-t border-[#D4CDCB] bg-white/70 mt-auto">
+        <div class="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="text-center sm:text-left space-y-1">
+                <p class="font-display text-base tracking-widest font-black text-[#161B2F]">FreelanceExchange</p>
+                <p class="text-xs text-[#5A4A44]">© 2026 Безопасная фриланс-инфраструктура. Все права защищены.</p>
+            </div>
+            <div class="flex space-x-10 text-xs font-bold uppercase tracking-widest">
+                <button onclick="openModal('rulesModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Регламент</button>
+                <button onclick="openModal('supportModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Поддержка</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна (для правил и поддержки) -->
+    <div id="rulesModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-xl p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('rulesModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-4">
+                <span class="text-xs font-mono text-[#5B687C] font-bold uppercase tracking-widest">Безопасность</span>
+                <h3 class="font-display text-2xl font-bold">Правила экосистемы</h3>
+                <div class="text-[#5A4A44] text-sm space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                    <p><strong class="text-[#161B2F]">1. Идентификация.</strong> Все аккаунты проходят автоматическую модерацию. Запрещено дублирование профилей и использование фейковых портфолио.</p>
+                    <p><strong class="text-[#161B2F]">2. Финансовая защита.</strong> Проведение сделок в обход «Сейфа» запрещено политикой безопасности платформы FreelanceExchange.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="supportModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-sm p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('supportModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-6 text-center">
+                <h3 class="font-display text-xl font-bold">Служба заботы FreelanceExchange</h3>
+                <p class="text-[#5A4A44] text-sm">Решаем вопросы верификации, вывода средств и технических сбоев 24/7.</p>
+                <a href="mailto:help@uzel.by" class="block w-full bg-[#D4CDCB] border border-[#5B687C] py-4 rounded-full text-xs font-bold text-[#161B2F] transition-colors hover:bg-[#5B687C] hover:text-white">help@uzel.by</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+        document.querySelectorAll('.modal-blur').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) closeModal(this.id);
+            });
+        });
+
+        // Блок авторизации и навигации
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+        const cabinetLink = document.getElementById('cabinetLink');
+
+        function getDashboardUrl(role) {
+            if (role === 'Customer') return 'customer-dashboard.html';
+            if (role === 'Freelancer') return 'freelancer-dashboard.html';
+            if (role === 'Moderator') return 'moderator-dashboard.html';
+            if (role === 'Admin') return 'admin-dashboard.html';
+            return '#';
+        }
+
+        if (!token) {
+            // Неавторизованный: показываем вход/регистрацию в правом блоке, ссылка "Кабинет" скрыта
+            authBlock.innerHTML = `
+                <a href="login.html" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Вход</a>
+                <a href="register.html" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Регистрация</a>
+            `;
+            if (cabinetLink) cabinetLink.classList.add('hidden');
+        } else {
+            // Авторизованный: показываем имя и кнопку выхода справа, а также ссылку "Кабинет" в навигации
+            if (cabinetLink) {
+                cabinetLink.href = getDashboardUrl(user.role);
+                cabinetLink.classList.remove('hidden');
+            }
+            authBlock.innerHTML = `
+                <span class="text-[#5A4A44] text-sm font-normal">${escapeHtml(user.fullName)}</span>
+                <button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] transition-colors">Выйти</button>
+            `;
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                localStorage.clear();
+                window.location.reload();
+            });
+        }
+
+        let activeSubscription = null;
+
+        async function loadMySubscription() {
+            if (!token) return;
+            try {
+                const res = await fetch('/api/Subscriptions/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const sub = await res.json();
+                    activeSubscription = sub.hasActiveSubscription ? sub : null;
+                    const statusDiv = document.getElementById('subscriptionStatus');
+                    if (activeSubscription) {
+                        statusDiv.classList.remove('hidden');
+                        statusDiv.innerHTML = `
+                            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div>
+                                    <p class="text-[#5A4A44] text-xs uppercase font-bold">Ваша активная подписка</p>
+                                    <p class="text-xl font-bold text-[#5B687C]">${escapeHtml(sub.planName)}</p>
+                                    <p class="text-sm text-[#5A4A44]">Действует до ${new Date(sub.endDate).toLocaleDateString()}</p>
+                                </div>
+                                <div class="bg-[#F7F3ED] px-4 py-2 rounded-xl text-center">
+                                    <span class="text-2xl font-black text-[#161B2F]">${sub.daysLeft}</span> <span class="text-xs text-[#5A4A44]">дней осталось</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        statusDiv.classList.add('hidden');
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadPlans() {
+            const container = document.getElementById('plansContainer');
+            container.innerHTML = '<div class="col-span-3 text-center py-12 text-[#5A4A44]">Загрузка тарифов...</div>';
+            try {
+                const res = await fetch('/api/Subscriptions/plans');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                let plans = await res.json();
+
+                // Фильтрация по роли пользователя
+                if (token && user.role) {
+                    const roleField = plans[0] && plans[0].TargetRole !== undefined ? 'TargetRole' : 'targetRole';
+                    plans = plans.filter(p => p[roleField] === user.role);
+                }
+
+                if (!plans.length) {
+                    if (token && user.role) {
+                        container.innerHTML = '<div class="col-span-3 text-center text-[#5A4A44]">Нет доступных тарифов для вашей роли</div>';
+                    } else {
+                        container.innerHTML = '<div class="col-span-3 text-center text-[#5A4A44]">Тарифы временно недоступны</div>';
+                    }
+                    return;
+                }
+
+                container.innerHTML = plans.map((plan, index) => {
+                    let buttonHtml = '';
+                    if (!token) {
+                        buttonHtml = `<a href="login.html" class="mt-6 block text-center btn-primary w-full">Войти для покупки</a>`;
+                    } else {
+                        if (activeSubscription) {
+                            buttonHtml = `<button class="mt-6 btn-primary w-full" disabled style="background-color: #E9ECEF; color: #8D8F8E; cursor: not-allowed; border: none;">Подписка активна</button>`;
+                        } else {
+                            buttonHtml = `<button class="buy-plan-btn mt-6 btn-primary w-full" data-id="${plan.id}" data-price="${plan.price}">Купить за ${plan.price} BYN</button>`;
+                        }
+                    }
+                    return `
+                        <div class="премиум-карта rounded-2xl p-6 flex flex-col justify-between transition-all hover:scale-105 animate-fade-in-up" style="animation-delay: ${index * 0.1}s">
+                            <div>
+                                <h3 class="font-display text-2xl font-black text-[#161B2F]">${escapeHtml(plan.name)}</h3>
+                                <div class="mt-4 text-3xl font-black text-[#5B687C]">${plan.price} BYN</div>
+                                <p class="text-[#5A4A44] text-sm mt-1">на ${plan.days} дней</p>
+                                <ul class="mt-6 space-y-2 text-sm text-[#5A4A44]">
+                                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-[#5B687C]"></i> Сниженная комиссия</li>
+                                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-[#5B687C]"></i> Приоритет в поиске</li>
+                                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-[#5B687C]"></i> Ранний доступ к проектам</li>
+                                </ul>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+
+                document.querySelectorAll('.buy-plan-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const planId = btn.dataset.id;
+                        const price = btn.dataset.price;
+                        if (confirm(`Купить тариф за ${price} BYN? Средства будут списаны с вашего баланса.`)) {
+                            try {
+                                const buyRes = await fetch('/api/Subscriptions/buy', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                    body: JSON.stringify({ planId: parseInt(planId) })
+                                });
+                                const result = await buyRes.text();
+                                if (buyRes.ok) {
+                                    alert(result);
+                                    await loadMySubscription();
+                                    await loadPlans();
+                                } else {
+                                    alert(result || 'Ошибка покупки');
+                                }
+                            } catch(e) { alert('Ошибка сети'); }
+                        }
+                    });
+                });
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = '<div class="col-span-3 text-center text-[#DBA1A2]">Ошибка загрузки тарифов</div>';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+        }
+
+        loadMySubscription().then(() => loadPlans());
+    </script>
+</body>
+</html>

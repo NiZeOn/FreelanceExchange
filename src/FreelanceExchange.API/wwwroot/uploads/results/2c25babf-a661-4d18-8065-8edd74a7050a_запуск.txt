@@ -1,0 +1,3 @@
+cd src\FreelanceExchange.API
+dotnet run
+пароли пользователей: 123456

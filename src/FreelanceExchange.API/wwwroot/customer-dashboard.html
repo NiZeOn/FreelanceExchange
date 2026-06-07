@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Кабинет заказчика | FreelanceExchange</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Geologica', 'sans-serif'] },
+                    colors: { бг: '#F7F3ED', основной: '#161B2F', акцент: '#5B687C', мягкий: '#8D8F8E', светлый: '#D4CDCB', карта: '#FFFFFF' },
+                    animation: { 'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards' },
+                    keyframes: { fadeIn: { '0%': { opacity: '0', transform: 'translateY(4px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #F7F3ED; color: #161B2F; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .световой-узел { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%); border-radius: 50%; pointer-events: none; z-index: 0; }
+        .премиум-карта { background: #FFFFFF; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .премиум-карта:hover { border-color: #D4CDCB; box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1); transform: translateY(-2px); }
+        .tab-active { background-color: rgba(91,104,124,0.1); border-color: #5B687C !important; color: #161B2F !important; }
+        .инпут-блок { display: flex; align-items: center; background-color: white; border: 1px solid #D4CDCB; border-radius: 0.75rem; transition: all 0.25s; }
+        .инпут-блок:focus-within { border-color: #5B687C; box-shadow: 0 0 0 3px rgba(91,104,124,0.15); }
+        .селект-стиль { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238D8F8E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1rem; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #F7F3ED; }
+        ::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        .toast { position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: white; border-radius: 0.75rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; transform: translateX(400px); transition: transform 0.3s ease; border-left: 4px solid; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.info { border-left-color: #3b82f6; }
+        .custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .custom-modal.show { opacity: 1; pointer-events: auto; }
+        .custom-modal .modal-box { background: white; border-radius: 1.5rem; max-width: 400px; width: 90%; padding: 1.5rem; box-shadow: 0 20px 30px -12px rgba(0,0,0,0.2); border: 1px solid #D4CDCB; }
+        @media (max-width: 768px) { .световой-узел { width: 300px; height: 300px; } .премиум-карта { padding: 1rem !important; } .tab-btn { flex: 1 1 auto; justify-content: center; font-size: 10px; padding: 0.5rem 0.75rem; } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative antialiased">
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+    <div class="световой-узел top-[-10%] right-[-10%]"></div>
+    <div class="световой-узел bottom-[10%] left-[-10%]"></div>
+
+    <!-- ШАПКА -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2"><span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>FreelanceExchange</a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F]">Главная</a>
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F]">Проекты</a>
+                <a href="tariffs.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F]">Подписка</a>
+                <a id="cabinetNavLink" href="customer-dashboard.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F]">Кабинет</a>
+            </nav>
+            <div id="authBlock" class="text-xs uppercase tracking-widest font-bold flex items-center space-x-6"></div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-10 relative z-10 max-w-6xl flex-grow">
+        <div class="премиум-карта rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                <div class="relative"><div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border border-[#D4CDCB] flex items-center justify-center overflow-hidden shadow-sm"><img id="avatarPreview" src="" alt="Аватар" class="w-full h-full object-cover hidden"><i data-lucide="user" class="w-6 h-6 sm:w-8 sm:h-8 text-[#5A4A44]"></i></div></div>
+                <div><h1 id="userNameHeading" class="font-display text-2xl sm:text-3xl font-black text-[#161B2F] tracking-tight">Заказчик</h1><div class="flex items-center gap-2 mt-1.5 justify-center sm:justify-start"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-[#5A4A44] text-[11px] uppercase font-bold tracking-wider">Панель управления</span></div></div>
+            </div>
+            <div class="flex gap-3 w-full sm:w-auto">
+                <button id="editProfileBtn" class="flex-1 sm:flex-initial bg-white border border-[#D4CDCB] text-[#161B2F] px-5 py-3.5 rounded-xl hover:bg-[#EFD8D6] transition-all text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2"><i data-lucide="settings" class="w-3.5 h-3.5 text-[#5A4A44]"></i> Настройки</button>
+                <button id="createOrderBtn" class="flex-1 sm:flex-initial bg-[#5B687C] text-white px-5 py-3.5 rounded-xl hover:bg-[#3A4454] transition-all text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 shadow-md active:scale-[0.98]"><i data-lucide="plus" class="w-4 h-4"></i> Создать заказ</button>
+            </div>
+        </div>
+
+        <!-- Финансовые блоки -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+            <div class="премиум-карта rounded-2xl p-6 flex justify-between items-center"><div><p class="text-[#5A4A44] text-[10px] uppercase tracking-widest font-bold mb-1">Доступно средств</p><p id="balance" class="text-3xl font-black text-[#5B687C] tracking-tight">0 BYN</p></div><button id="withdrawBtn" class="p-3.5 bg-[#D4CDCB] border border-[#D4CDCB] rounded-xl hover:bg-[#EFD8D6]"><i data-lucide="credit-card" class="w-5 h-5 text-[#5B687C]"></i></button></div>
+        </div>
+
+        <!-- Кошелёк FreelancePay -->
+        <div class="премиум-карта rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-start flex-wrap gap-4"><div><h3 class="font-display font-black text-lg flex items-center gap-2 text-[#161B2F]"><i data-lucide="wallet" class="w-5 h-5 text-[#5B687C]"></i> Кошелёк FreelancePay</h3><div class="mt-2"><p class="text-[#5A4A44] text-xs uppercase tracking-widest">Баланс кошелька</p><p id="walletBalance" class="text-2xl font-black text-[#5B687C]">0.00 BYN</p><p id="linkedCardInfo" class="text-xs text-[#5A4A44] mt-1">Карта не привязана</p></div></div><div class="flex gap-2 flex-wrap"><button id="openLinkCardBtn" class="bg-white border border-[#D4CDCB] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#EFD8D6]">Привязать карту</button><button id="openWalletDepositBtn" class="bg-white border border-[#D4CDCB] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#EFD8D6]">Пополнить кошелёк</button><button id="transferToPlatformBtn" class="bg-[#5B687C]/10 text-[#5B687C] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#5B687C]/20">Перевести на счёт</button></div></div>
+        </div>
+
+        <!-- Подписка PRO -->
+        <div id="subscriptionInfo" class="премиум-карта rounded-2xl p-4 mb-6 hidden"><div class="flex justify-between items-center flex-wrap gap-3"><div><p class="text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">PRO статус</p><p id="subscriptionPlanName" class="font-bold text-[#5B687C] text-lg"></p><p id="subscriptionExpiry" class="text-xs text-[#5A4A44]/80"></p></div><a href="tariffs.html" class="bg-[#5B687C]/10 text-[#5B687C] px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-[#5B687C] hover:text-white">Управление</a></div></div>
+
+        <!-- Табы -->
+        <div class="bg-white border border-[#D4CDCB] p-1.5 rounded-2xl flex flex-wrap gap-1 mb-8 shadow-sm">
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="myOrders">📁 Мои заказы</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="responses">💬 Отклики</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="finance">💰 Транзакции</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="reviews">⭐ Отзывы</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="notifications">🔔 Уведомления</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="achievements">🏆 Достижения</button>
+            <button class="tab-btn flex-1 sm:flex-none justify-center flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-[#5A4A44] border border-transparent rounded-xl transition-all" data-tab="support">🎧 Поддержка</button>
+        </div>
+
+        <div class="mt-4">
+            <div id="myOrdersTab" class="tab-content space-y-4 animate-fade-in"><div class="flex gap-3 mb-4 flex-wrap items-end bg-white p-4 rounded-xl border border-[#D4CDCB]"><div class="flex-1 min-w-[150px]"><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Статус заказа</label><select id="orderStatusFilter" class="w-full bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"><option value="">Все</option><option value="Open">Открыт</option><option value="InProgress">В работе</option><option value="Completed">Завершён</option><option value="PendingModeration">На модерации</option></select></div><button id="applyOrderFilter" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold">Применить</button></div><div id="ordersListContainer"></div></div>
+            <div id="responsesTab" class="tab-content hidden space-y-4 animate-fade-in"><div class="flex gap-3 mb-4 flex-wrap items-end bg-white p-4 rounded-xl border border-[#D4CDCB]"><div class="flex-1 min-w-[150px]"><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Статус отклика</label><select id="responseStatusFilter" class="w-full bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"><option value="">Все</option><option value="Pending">На рассмотрении</option><option value="Accepted">Принят</option><option value="Rejected">Отклонён</option></select></div><button id="applyResponseFilter" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold">Применить</button></div><div id="responsesListContainer"></div></div>
+            <div id="financeTab" class="tab-content hidden animate-fade-in"><div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 sm:p-8"><div class="flex flex-col sm:flex-row gap-4 mb-6 items-end"><div><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Дата от</label><input type="date" id="transStartDate" class="bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"></div><div><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Дата до</label><input type="date" id="transEndDate" class="bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"></div><button id="applyTransFilter" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-bold">Показать</button></div><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Журнал финансовых операций</h3><div id="transactionsList" class="divide-y divide-[#D4CDCB] text-sm"></div></div></div>
+            <div id="reviewsTab" class="tab-content hidden animate-fade-in"><div class="bg-white border border-[#D4CDCB] rounded-2xl p-6"><div class="flex justify-between items-center mb-4"><h3 class="font-display font-black text-lg text-[#161B2F]">Отзывы обо мне</h3><div><span class="text-2xl font-bold text-[#5B687C]" id="avgRating">0</span><span class="text-[#5A4A44]"> / 5</span><span class="text-xs text-[#5A4A44] ml-2" id="totalReviews">(0 отзывов)</span></div></div><div id="reviewsList" class="space-y-4 max-h-96 overflow-y-auto custom-scroll"></div></div></div>
+            <div id="notificationsTab" class="tab-content hidden animate-fade-in"><div class="bg-white border border-[#D4CDCB] rounded-2xl p-6"><div class="flex justify-between items-center mb-4"><h3 class="font-display font-black text-lg text-[#161B2F]">Уведомления платформы</h3><button id="markAllReadBtn" class="text-xs text-[#5B687C] hover:underline">Все прочитаны</button></div><div id="notificationsList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll"></div></div></div>
+            <div id="achievementsTab" class="tab-content hidden animate-fade-in"><div class="bg-white border border-[#D4CDCB] rounded-2xl p-6"><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Мои достижения</h3><div id="achievementsList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll"></div></div></div>
+            <div id="supportTab" class="tab-content hidden animate-fade-in"><div class="bg-white border border-[#D4CDCB] rounded-2xl p-6"><h3 class="font-display font-black text-lg mb-4 flex items-center gap-2 text-[#161B2F]"><i data-lucide="headphones" class="w-5 h-5 text-[#5B687C]"></i> Чат с администратором</h3><div id="adminChatMessages" class="h-80 overflow-y-auto custom-scroll mb-4 space-y-3 p-2 bg-[#FCF9F7] rounded-xl"></div><div class="flex gap-2"><input type="text" id="adminChatInput" placeholder="Напишите сообщение администратору..." class="flex-1 bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm outline-none focus:border-[#5B687C]"><button id="sendAdminMessageBtn" class="bg-[#5B687C] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#3A4454]">Отправить</button></div></div></div>
+        </div>
+    </main>
+
+    <footer class="py-12 border-t border-[#D4CDCB] bg-white/70 mt-auto"><div class="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6"><div class="text-center sm:text-left space-y-1"><p class="font-display text-base tracking-widest font-black text-[#161B2F]">FreelanceExchange</p><p class="text-xs text-[#5A4A44]">© 2026 Безопасная фриланс-инфраструктура. Все права защищены.</p></div><div class="flex space-x-10 text-xs font-bold uppercase tracking-widest"><button onclick="openModal('rulesModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Регламент</button><button onclick="openModal('supportModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Поддержка</button></div></div></footer>
+
+    <!-- Модальные окна -->
+    <div id="createOrderModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-lg p-6 sm:p-8 relative shadow-xl"><h3 class="font-display font-black text-xl mb-5 text-[#161B2F]">Публикация нового проекта</h3><form id="createOrderForm" class="space-y-4" novalidate><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Название проекта</label><div class="инпут-блок"><input type="text" id="orderTitle" required placeholder="Например: Разработка лендинга на Tilda" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Техническое задание</label><div class="инпут-блок"><textarea id="orderDesc" required placeholder="Опишите требования, стек и ожидаемый результат..." rows="4" class="w-full bg-transparent px-4 py-3 text-sm outline-none resize-none"></textarea></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Бюджет (BYN)</label><div class="инпут-блок"><input type="number" id="orderBudget" required placeholder="Сумма" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Срок выполнения</label><div class="инпут-блок"><input type="datetime-local" id="orderDeadline" required class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Специализация / Категория</label><div class="инпут-блок"><select id="orderCategory" required class="селект-стиль w-full bg-transparent px-4 py-3 text-sm outline-none cursor-pointer font-medium"><option value="">Загрузка категорий...</option></select></div></div><div id="orderError" class="hidden items-center gap-2 bg-[#EFD8D6] border border-[#DBA1A2] rounded-xl p-3 text-[#422B23] text-xs"><i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i><span id="orderErrorText"></span></div><div class="flex flex-col sm:flex-row gap-3 pt-3"><button type="submit" class="flex-1 bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-[#3A4454] transition-all shadow-md">Опубликовать проект</button><button type="button" id="closeOrderModal" class="bg-white border border-[#D4CDCB] text-[#5A4A44] text-xs uppercase tracking-widest font-bold py-4 px-6 rounded-xl hover:bg-[#F7F3ED]">Отмена</button></div></form></div></div>
+
+    <div id="profileModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl"><div class="p-6 border-b border-[#D4CDCB] flex justify-between items-center"><h3 class="font-display font-black text-lg text-[#161B2F]">Настройки профиля</h3><button id="closeProfileModal" class="p-1.5 hover:bg-[#F7F3ED] text-[#5A4A44] hover:text-[#161B2F] rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button></div><div class="p-6 overflow-y-auto space-y-6"><div class="bg-[#FCF9F7] border border-[#D4CDCB] p-5 rounded-xl text-center space-y-3"><div id="avatarPreviewModal" class="w-20 h-20 rounded-full bg-white border-2 border-[#D4CDCB] mx-auto flex items-center justify-center overflow-hidden shadow-sm"><img id="avatarImg" src="" alt="Аватар" class="w-full h-full object-cover hidden"><i id="avatarPlaceholder" data-lucide="user" class="w-7 h-7 text-[#5A4A44]"></i></div><div class="flex flex-col items-center gap-2"><input type="file" id="avatarFile" accept="image/jpeg,image/png,image/gif" class="text-xs text-[#5A4A44] max-w-[180px] file:hidden"><button type="button" id="uploadAvatarBtn" class="text-xs font-bold uppercase tracking-wider text-[#5B687C] hover:brightness-110 transition-all flex items-center gap-1.5"><i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Загрузить фото</button></div></div><form id="profileForm" class="space-y-4"><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Ваше имя / ФИО</label><div class="инпут-блок"><input type="text" id="fullName" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Контактный телефон</label><div class="инпут-блок"><input type="text" id="phone" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><button type="submit" class="w-full bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-[#3A4454] transition-all">Сохранить изменения</button></form><hr class="border-[#D4CDCB]"><div class="space-y-4"><h4 class="text-xs uppercase tracking-widest font-black text-[#5B687C]">Безопасность аккаунта</h4><div class="space-y-3 p-4 bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl"><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] pl-1">Новый адрес почты</label><input type="email" id="newEmail" placeholder="Новый email" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#5B687C]"><input type="password" id="emailPassword" placeholder="Текущий пароль для подтверждения" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#5B687C]"><button type="button" id="changeEmailBtn" class="text-xs font-bold text-[#5B687C] hover:underline">Обновить email адрес</button></div><div class="space-y-3 p-4 bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl"><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] pl-1">Изменение пароля</label><input type="password" id="oldPassword" placeholder="Старый пароль" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#5B687C]"><input type="password" id="newPassword" placeholder="Новый надежный пароль" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#5B687C]"><input type="password" id="confirmPassword" placeholder="Повторите новый пароль" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#5B687C]"><button type="button" id="changePasswordBtn" class="text-xs font-bold text-[#5B687C] hover:underline">Установить новый пароль</button></div></div><div id="profileMessage" class="text-xs text-[#DBA1A2] hidden bg-[#EFD8D6] border border-[#DBA1A2] p-3.5 rounded-xl"></div></div></div></div>
+
+    <div id="withdrawModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><button id="closeWithdrawModal" class="absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-5 h-5"></i></button><h3 class="font-display font-black text-xl mb-4 text-[#161B2F]">Вывод средств на карту</h3><div class="space-y-4"><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-1 pl-1">Сумма (BYN)</label><div class="инпут-блок"><input type="number" id="withdrawAmount" placeholder="0.00" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-1 pl-1">Номер карты</label><div class="инпут-блок"><input type="text" id="withdrawCardNumber" placeholder="0000 0000 0000 0000" maxlength="19" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-1 pl-1">Срок (MM/YY)</label><div class="инпут-блок"><input type="text" id="withdrawExpiry" placeholder="MM/YY" maxlength="5" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-1 pl-1">CVC</label><div class="инпут-блок"><input type="password" id="withdrawCvc" placeholder="123" maxlength="3" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div></div><div id="withdrawError" class="hidden items-center gap-2 bg-[#EFD8D6] border border-[#DBA1A2] rounded-xl p-3 text-[#422B23] text-xs"><i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i><span id="withdrawErrorText"></span></div><button id="confirmWithdrawBtn" class="w-full bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-[#3A4454] transition-all">Вывести</button></div></div></div>
+
+    <div id="linkCardModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><button id="closeLinkCardModal" class="absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-5 h-5"></i></button><h3 class="font-display font-black text-xl mb-4 text-[#161B2F]">Привязка карты</h3><div class="space-y-4"><div><input type="text" id="linkCardNumber" placeholder="Номер карты" maxlength="19" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5B687C]"></div><div class="grid grid-cols-2 gap-4"><input type="text" id="linkExpiry" placeholder="MM/YY" maxlength="5" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"><input type="password" id="linkCvc" placeholder="CVC" maxlength="3" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"></div><div id="linkCardError" class="hidden text-[#DBA1A2] text-xs"></div><button id="confirmLinkCardBtn" class="w-full bg-[#5B687C] text-white font-black py-2 rounded-xl text-sm hover:bg-[#3A4454] transition-all">Привязать</button></div></div></div>
+
+    <div id="walletDepositModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><button id="closeWalletDepositModal" class="absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-5 h-5"></i></button><h3 class="font-display font-black text-xl mb-4 text-[#161B2F]">Пополнение кошелька FreelancePay</h3><div class="space-y-4"><div><input type="number" id="walletDepositAmount" placeholder="Сумма (BYN)" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"></div><div><input type="text" id="depositCardNumber" placeholder="Номер карты" maxlength="19" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"></div><div class="grid grid-cols-2 gap-4"><input type="text" id="depositExpiry" placeholder="MM/YY" maxlength="5" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"><input type="password" id="depositCvc" placeholder="CVC" maxlength="3" class="w-full bg-white border border-[#D4CDCB] rounded-xl px-4 py-2 text-sm"></div><div id="walletDepositError" class="hidden text-[#DBA1A2] text-xs"></div><button id="confirmWalletDepositBtn" class="w-full bg-[#5B687C] text-white font-black py-2 rounded-xl text-sm hover:bg-[#3A4454] transition-all">Пополнить</button></div></div></div>
+
+    <div id="profileViewModal" class="fixed inset-0 z-50 bg-white/90 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-xl"><div class="p-6 border-b border-[#D4CDCB] flex justify-between items-center sticky top-0 bg-white"><div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-[#D4CDCB] border border-[#5B687C] overflow-hidden flex items-center justify-center"><img id="modalAvatar" src="" class="w-full h-full object-cover hidden"><i data-lucide="user" class="w-6 h-6 text-[#5A4A44]"></i></div><div><h3 id="modalUserName" class="font-display font-black text-xl text-[#161B2F]">Имя пользователя</h3><div class="flex items-center gap-2 text-xs"><span id="modalUserRole" class="text-[#5A4A44]">Роль</span><span class="text-[#5B687C]">•</span><span id="modalRating" class="text-[#5B687C] font-bold">0.0</span><span class="text-[#5A4A44]">/5</span><span id="modalReviewsCount" class="text-[#5A4A44]">(0 отзывов)</span></div></div></div><button id="closeProfileViewModal" class="text-[#5A4A44] hover:text-[#161B2F] p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button></div><div class="p-6 space-y-6"><div id="freelancerDetails" class="hidden"><div class="flex justify-between items-center"><div><p class="text-[10px] uppercase font-bold text-[#5A4A44]">Ставка в час</p><p id="modalHourlyRate" class="text-2xl font-black text-[#5B687C]">0 BYN</p></div><div class="flex flex-wrap gap-2"><span class="text-xs font-bold text-[#161B2F]">Навыки:</span><div id="modalSkills" class="flex flex-wrap gap-1"></div></div></div><div class="mt-3"><p class="text-[10px] uppercase font-bold text-[#5A4A44]">О себе</p><p id="modalBio" class="text-sm text-[#5A4A44] mt-1"></p></div></div><div id="portfolioSection" class="hidden"><h4 class="font-bold text-sm uppercase text-[#5A4A44]">Портфолио</h4><div id="modalPortfolio" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2"></div></div><div><h4 class="font-bold text-sm uppercase text-[#5A4A44]">Отзывы</h4><div id="modalReviews" class="space-y-3 mt-3 max-h-60 overflow-y-auto custom-scroll"></div></div></div></div></div>
+
+    <div id="rulesModal" class="modal-blur fixed inset-0 z-50 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-xl p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl"><button onclick="closeModal('rulesModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-6 h-6"></i></button><div class="space-y-4"><span class="text-xs font-mono text-[#5B687C] font-bold uppercase">Безопасность</span><h3 class="font-display text-2xl font-bold">Правила экосистемы</h3><div class="text-[#5A4A44] text-sm space-y-4 max-h-[40vh] overflow-y-auto pr-2"><p><strong class="text-[#161B2F]">1. Идентификация.</strong> Все аккаунты проходят автоматическую модерацию. Запрещено дублирование профилей и использование фейковых портфолио.</p><p><strong class="text-[#161B2F]">2. Финансовая защита.</strong> Проведение сделок в обход «Сейфа» запрещено политикой безопасности платформы FreelanceExchange.</p></div></div></div></div>
+    <div id="supportModal" class="modal-blur fixed inset-0 z-50 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-sm p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl"><button onclick="closeModal('supportModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-6 h-6"></i></button><div class="space-y-6 text-center"><h3 class="font-display text-xl font-bold">Служба заботы FreelanceExchange</h3><p class="text-[#5A4A44] text-sm">Решаем вопросы верификации, вывода средств и технических сбоев 24/7.</p><a href="mailto:help@uzel.by" class="block w-full bg-[#D4CDCB] border border-[#5B687C] py-4 rounded-full text-xs font-bold text-[#161B2F] transition-colors hover:bg-[#5B687C] hover:text-white">help@uzel.by</a></div></div></div>
+
+    <!-- Модальное окно для отзыва -->
+    <div id="reviewModal" class="custom-modal"><div class="modal-box"><h3 class="font-display font-black text-lg mb-4 text-[#161B2F]">Оцените работу</h3><p id="reviewFreelancerName" class="text-sm text-[#5A4A44] mb-3"></p><div class="mb-4"><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Оценка (1-5)</label><input type="number" id="reviewRating" min="1" max="5" step="1" class="w-full bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"></div><div class="mb-4"><label class="block text-xs font-semibold text-[#5A4A44] mb-1">Комментарий</label><textarea id="reviewComment" rows="3" class="w-full bg-white border border-[#D4CDCB] rounded-lg px-3 py-2 text-sm"></textarea></div><div class="flex gap-3 justify-end"><button id="cancelReviewBtn" class="px-4 py-2 border border-[#D4CDCB] rounded-xl text-xs font-bold text-[#5A4A44] hover:bg-[#F7F3ED]">Отмена</button><button id="submitReviewBtn" class="px-4 py-2 bg-[#5B687C] text-white rounded-xl text-xs font-bold hover:bg-[#3A4454]">Отправить</button></div></div></div>
+
+    <div id="transferModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4"><div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 relative shadow-xl"><button id="closeTransferModal" class="absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F]"><i data-lucide="x" class="w-5 h-5"></i></button><h3 class="font-display font-black text-xl mb-4 text-[#161B2F]">Перевод на счёт платформы</h3><div class="space-y-4"><div><label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-1 pl-1">Сумма (BYN)</label><div class="инпут-блок"><input type="number" id="transferAmount" placeholder="0.00" class="w-full bg-transparent px-4 py-3 text-sm outline-none"></div></div><div id="transferError" class="hidden items-center gap-2 bg-[#EFD8D6] border border-[#DBA1A2] rounded-xl p-3 text-[#422B23] text-xs"><i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i><span id="transferErrorText"></span></div><button id="confirmTransferBtn" class="w-full bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-3.5 rounded-xl hover:bg-[#3A4454] transition-all">Перевести</button></div></div></div>
+
+    <script>
+        lucide.createIcons();
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5 ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i><span class="text-sm text-[#161B2F]">${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+
+        function openModal(id) { const modal = document.getElementById(id); modal.classList.remove('opacity-0', 'pointer-events-none'); modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); document.body.style.overflow = 'hidden'; }
+        function closeModal(id) { const modal = document.getElementById(id); modal.classList.add('opacity-0', 'pointer-events-none'); modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95'); document.body.style.overflow = ''; }
+        
+        const allModals = ['createOrderModal', 'profileModal', 'withdrawModal', 'linkCardModal', 'walletDepositModal', 'profileViewModal', 'transferModal', 'reviewModal'];
+        allModals.forEach(modalId => { const modal = document.getElementById(modalId); if(modal) modal.addEventListener('click', function(e){ if(e.target === modal){ modal.classList.add('hidden'); if(modalId === 'profileViewModal') modal.style.display = 'none'; document.body.style.overflow = ''; } }); });
+        document.querySelectorAll('.modal-blur').forEach(modal => { modal.addEventListener('click', function(e){ if(e.target === this) closeModal(this.id); }); });
+
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token) window.location.href = 'login.html';
+        if (user.role !== 'Customer') { alert('Эта страница только для заказчиков'); window.location.href = 'index.html'; }
+
+        document.getElementById('userNameHeading').innerText = user.fullName || 'Заказчик';
+        const authBlock = document.getElementById('authBlock');
+        authBlock.innerHTML = `<span class="text-[#5A4A44] text-sm font-medium">${escapeHtml(user.fullName)}</span><button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] transition-colors">Выйти</button>`;
+        document.getElementById('logoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+
+        let currentTab = 'myOrders';
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = { myOrders: document.getElementById('myOrdersTab'), responses: document.getElementById('responsesTab'), finance: document.getElementById('financeTab'), reviews: document.getElementById('reviewsTab'), notifications: document.getElementById('notificationsTab'), achievements: document.getElementById('achievementsTab'), support: document.getElementById('supportTab') };
+        function switchTab(tabId) {
+            Object.values(contents).forEach(c => c.classList.add('hidden'));
+            contents[tabId].classList.remove('hidden');
+            tabs.forEach(btn => { if (btn.dataset.tab === tabId) btn.classList.add('tab-active'); else btn.classList.remove('tab-active'); });
+            currentTab = tabId;
+            if (tabId === 'myOrders') loadMyOrders();
+            if (tabId === 'responses') loadAllResponses();
+            if (tabId === 'finance') { loadTransactions(); loadBalance(); }
+            if (tabId === 'reviews') loadMyReviews();
+            if (tabId === 'notifications') loadNotifications();
+            if (tabId === 'achievements') loadAchievements();
+            if (tabId === 'support') loadAdminMessages();
+        }
+        tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+        switchTab('myOrders');
+
+        async function loadBalance() {
+            try {
+                const res = await fetch('/api/Finances', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { const data = await res.json(); document.getElementById('balance').innerText = `${data.balance.toFixed(2)} BYN`; }
+                else showToast('Ошибка загрузки баланса', 'error');
+            } catch(e) { showToast('Ошибка сети', 'error'); }
+        }
+
+        const withdrawModal = document.getElementById('withdrawModal');
+        document.getElementById('withdrawBtn').addEventListener('click', () => withdrawModal.classList.remove('hidden'));
+        document.getElementById('closeWithdrawModal').addEventListener('click', () => withdrawModal.classList.add('hidden'));
+        document.getElementById('confirmWithdrawBtn').addEventListener('click', async () => {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const cardNumber = document.getElementById('withdrawCardNumber').value.replace(/\s/g, '');
+            const expiry = document.getElementById('withdrawExpiry').value;
+            const cvc = document.getElementById('withdrawCvc').value;
+            const errorDiv = document.getElementById('withdrawError'), errorText = document.getElementById('withdrawErrorText');
+            errorDiv.classList.add('hidden');
+            if (isNaN(amount) || amount <= 0) { errorText.innerText = 'Введите корректную сумму'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{16}$/.test(cardNumber)) { errorText.innerText = 'Номер карты должен содержать 16 цифр'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{2}\/\d{2}$/.test(expiry)) { errorText.innerText = 'Срок в формате MM/YY'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{3}$/.test(cvc)) { errorText.innerText = 'CVC должен содержать 3 цифры'; errorDiv.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/Finances/withdraw', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ amount, cardNumber, expiry, cvc }) });
+                if (res.ok) { showToast(`Выведено ${amount} BYN на карту ****${cardNumber.slice(-4)}`, 'success'); withdrawModal.classList.add('hidden'); loadBalance(); loadTransactions(); document.getElementById('withdrawAmount').value = ''; document.getElementById('withdrawCardNumber').value = ''; document.getElementById('withdrawExpiry').value = ''; document.getElementById('withdrawCvc').value = ''; }
+                else { const err = await res.text(); errorText.innerText = err || 'Ошибка при выводе средств'; errorDiv.classList.remove('hidden'); }
+            } catch(e) { errorText.innerText = 'Ошибка сети. Попробуйте позже.'; errorDiv.classList.remove('hidden'); }
+        });
+
+        function translateOrderStatus(status) { const map = { 'Open': 'Открыт', 'InProgress': 'В работе', 'Completed': 'Завершён', 'PendingModeration': 'На модерации' }; return map[status] || status; }
+        let allOrders = [];
+        async function loadMyOrders() {
+            const container = document.getElementById('ordersListContainer');
+            container.innerHTML = '<div class="text-center py-8 text-sm text-[#5A4A44] animate-pulse">Загрузка ваших проектов...</div>';
+            try {
+                const res = await fetch('/api/Orders', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { const data = await res.json(); allOrders = data.items || data; applyOrdersFilter(); }
+                else throw new Error();
+            } catch(e) { container.innerHTML = '<div class="text-center text-red-500 bg-red-500/10 p-4 rounded-xl text-sm">Ошибка загрузки заказов</div>'; }
+        }
+        function applyOrdersFilter() { const status = document.getElementById('orderStatusFilter').value; let filtered = allOrders; if (status) filtered = filtered.filter(o => o.status === status); renderOrders(filtered); }
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersListContainer');
+            if (!orders.length) { container.innerHTML = `<div class="премиум-карта p-12 text-center text-[#5A4A44] flex flex-col items-center gap-2 rounded-xl"><i data-lucide="folder-open" class="w-8 h-8 opacity-30"></i><span>Нет заказов</span></div>`; lucide.createIcons(); return; }
+            container.innerHTML = orders.map(order => `
+                <div class="премиум-карта rounded-xl p-6 relative overflow-hidden">
+                    <div class="flex justify-between items-start flex-col md:flex-row gap-4">
+                        <div><h3 class="font-display font-black text-lg text-[#161B2F]">${escapeHtml(order.title)}</h3><p class="text-[#5A4A44] text-sm">${escapeHtml(order.description)}</p><div class="flex flex-wrap gap-x-4 gap-y-1.5 pt-2 text-xs"><span class="text-[#5B687C] font-bold">💰 ${order.budget} BYN</span><span>📅 до ${new Date(order.deadline).toLocaleDateString()}</span><span class="bg-[#F7F3ED] px-2 py-0.5 rounded">${translateOrderStatus(order.status)}</span></div></div>
+                        <div class="flex gap-2 flex-wrap">
+                            ${order.status === 'Open' ? `<button class="view-responses-btn bg-[#5B687C]/10 text-[#5B687C] hover:bg-[#5B687C] hover:text-white px-4 py-2 rounded-xl text-xs font-bold" data-id="${order.id}">Отклики</button><button class="delete-order-btn bg-red-500/20 text-red-600 hover:bg-red-500/30 px-3 py-2 rounded-xl text-xs font-bold" data-id="${order.id}">Отказаться</button>` : ''}
+                            ${order.status === 'InProgress' ? `<a href="project.html?id=${order.id}" class="bg-[#5B687C]/10 text-[#5B687C] hover:bg-[#5B687C] hover:text-white px-4 py-2 rounded-xl text-xs font-bold">Перейти в проект</a><button class="complete-order-btn bg-green-500/20 text-green-700 hover:bg-green-500/30 px-4 py-2 rounded-xl text-xs font-bold" data-id="${order.id}">Завершить</button>` : ''}
+                            ${order.status === 'Completed' ? `<button class="review-order-btn bg-[#5B687C]/10 text-[#5B687C] hover:bg-[#5B687C] hover:text-white px-4 py-2 rounded-xl text-xs font-bold" data-order-id="${order.id}" data-freelancer-name="${escapeHtml(order.freelancerName || 'фрилансер')}">Оставить отзыв</button>${order.freelancerId ? `<button class="view-freelancer-profile border border-[#D4CDCB] px-3 py-2 rounded-xl text-xs" data-user-id="${order.freelancerId}">👤 Профиль</button>` : ''}` : ''}
+                            ${order.status === 'PendingModeration' ? `<span class="text-yellow-600 bg-yellow-500/10 px-3 py-2 rounded-xl text-xs">На модерации</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+            document.querySelectorAll('.view-responses-btn').forEach(btn => btn.addEventListener('click', () => switchTab('responses')));
+            document.querySelectorAll('.delete-order-btn').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Отказаться от заказа? Средства будут возвращены.')){ await fetch(`/api/Orders/${btn.dataset.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadMyOrders(); showToast('Заказ удалён', 'success'); } }));
+            document.querySelectorAll('.complete-order-btn').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Завершить заказ? Средства перейдут фрилансеру')){ await fetch(`/api/Orders/${btn.dataset.id}/complete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadMyOrders(); showToast('Заказ завершён', 'success'); } }));
+            let currentOrderId = null;
+            document.querySelectorAll('.review-order-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentOrderId = btn.dataset.orderId;
+                    document.getElementById('reviewFreelancerName').innerText = `Фрилансер: ${btn.dataset.freelancerName}`;
+                    document.getElementById('reviewRating').value = '';
+                    document.getElementById('reviewComment').value = '';
+                    document.getElementById('reviewModal').classList.add('show');
+                });
+            });
+            document.getElementById('cancelReviewBtn').onclick = () => document.getElementById('reviewModal').classList.remove('show');
+            document.getElementById('submitReviewBtn').onclick = async () => {
+                const rating = parseInt(document.getElementById('reviewRating').value);
+                const comment = document.getElementById('reviewComment').value.trim();
+                if (isNaN(rating) || rating < 1 || rating > 5) { showToast('Оценка должна быть от 1 до 5', 'error'); return; }
+                if (!comment) { showToast('Напишите комментарий', 'error'); return; }
+                await submitReview(currentOrderId, rating, comment);
+                document.getElementById('reviewModal').classList.remove('show');
+            };
+            document.querySelectorAll('.view-freelancer-profile').forEach(btn => btn.addEventListener('click', () => showUserProfile(btn.dataset.userId)));
+        }
+        document.getElementById('applyOrderFilter').addEventListener('click', applyOrdersFilter);
+
+        let allResponses = [];
+        async function loadAllResponses() {
+            const container = document.getElementById('responsesListContainer');
+            container.innerHTML = '<div class="text-center py-8 text-sm text-[#5A4A44] animate-pulse">Сканирование откликов...</div>';
+            try {
+                const ordersRes = await fetch('/api/Orders', { headers: { 'Authorization': `Bearer ${token}` } });
+                let orders = await ordersRes.json(); orders = orders.items || orders;
+                let responses = [];
+                for (let order of orders) {
+                    const respRes = await fetch(`/api/Responses/order/${order.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (respRes.ok) {
+                        let resps = await respRes.json();
+                        resps.forEach(r => { r.orderTitle = order.title; r.freelancerId = r.freelancerId || (r.freelancer ? r.freelancer.id : null); });
+                        responses.push(...resps);
+                    }
+                }
+                allResponses = responses;
+                applyResponsesFilter();
+            } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка</div>'; }
+        }
+        function applyResponsesFilter() { const status = document.getElementById('responseStatusFilter').value; let filtered = allResponses; if (status) filtered = filtered.filter(r => r.status === status); renderResponses(filtered); }
+        function renderResponses(responses) {
+            const container = document.getElementById('responsesListContainer');
+            if (!responses.length) { container.innerHTML = `<div class="премиум-карта p-12 text-center text-[#5A4A44]"><i data-lucide="message-square-off" class="w-8 h-8 opacity-30"></i><span>Нет откликов</span></div>`; lucide.createIcons(); return; }
+            container.innerHTML = responses.map(r => `
+                <div class="премиум-карта rounded-xl p-6 space-y-3.5">
+                    <div class="flex justify-between"><div><span class="text-[10px] uppercase font-bold text-[#5A4A44]">Проект</span><div class="font-bold">${escapeHtml(r.orderTitle)}</div></div><div><span class="text-[10px] uppercase font-bold text-[#5A4A44]">Предложено</span><div class="text-[#5B687C] font-black">${r.proposedPrice} BYN</div></div></div>
+                    <div><span class="text-[10px] uppercase font-bold text-[#5A4A44]">Письмо</span><p class="text-sm bg-[#FCF9F7] p-3 rounded-lg">${escapeHtml(r.coverLetter)}</p></div>
+                    <div class="flex justify-between items-center"><span>Фрилансер: <strong>${escapeHtml(r.freelancerName)}</strong> ${r.freelancerId ? `<button class="view-freelancer-profile text-[#5B687C] underline" data-user-id="${r.freelancerId}">профиль</button>` : ''}</span>
+                    <div><span class="bg-[#F7F3ED] px-2 py-1 rounded text-xs">Статус: ${getStatus(r.status)}</span>${r.status === 'Pending' ? `<button class="accept-response bg-green-500 text-white px-3 py-1 rounded text-xs ml-2" data-response="${r.id}">Принять</button><button class="reject-response bg-red-500/80 text-white px-3 py-1 rounded text-xs" data-response="${r.id}">Отказать</button>` : ''}</div></div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+            document.querySelectorAll('.accept-response').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Принять отклик?')){ const res = await fetch(`/api/Responses/${btn.dataset.response}/accept`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); if(res.ok){ showToast('Отклик принят', 'success'); loadAllResponses(); loadMyOrders(); } else showToast('Ошибка', 'error'); } }));
+            document.querySelectorAll('.reject-response').forEach(btn => btn.addEventListener('click', async () => { if(confirm('Отказать?')){ await fetch(`/api/Responses/${btn.dataset.response}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadAllResponses(); showToast('Отклик отклонён', 'success'); } }));
+            document.querySelectorAll('.view-freelancer-profile').forEach(btn => btn.addEventListener('click', () => showUserProfile(btn.dataset.userId)));
+        }
+        document.getElementById('applyResponseFilter').addEventListener('click', applyResponsesFilter);
+
+        function translateTransactionType(type) { const map = { 'Deposit': 'Пополнение', 'OrderComplete': 'Списание за заказ', 'FreelancerPayment': 'Выплата фрилансеру', 'PlatformCommission': 'Комиссия платформы', 'WalletDeposit': 'Пополнение кошелька', 'TransferToPlatform': 'Перевод на счёт', 'Withdraw': 'Вывод средств', 'WithdrawToWallet': 'Вывод в кошелёк', 'PlatformDeposit': 'Зачисление на счёт' }; return map[type] || type; }
+        let allTransactions = [];
+        async function loadTransactions() { try { const res = await fetch('/api/Finances/transactions', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { allTransactions = await res.json(); applyTransactionsFilter(); } else showToast('Ошибка загрузки транзакций', 'error'); } catch(e) { showToast('Ошибка сети', 'error'); } }
+        function applyTransactionsFilter() { const start = document.getElementById('transStartDate').value; const end = document.getElementById('transEndDate').value; let filtered = allTransactions; if (start) filtered = filtered.filter(t => new Date(t.date) >= new Date(start)); if (end) filtered = filtered.filter(t => new Date(t.date) <= new Date(end)); renderTransactions(filtered); }
+        function renderTransactions(tx) { const container = document.getElementById('transactionsList'); if (!tx.length) { container.innerHTML = '<div class="text-[#5A4A44] text-sm py-6 text-center">Нет записей</div>'; return; } container.innerHTML = tx.map(t => `<div class="flex justify-between items-center py-3"><div><span class="font-medium">${translateTransactionType(t.type)}</span><div class="text-xs text-[#5A4A44]">${new Date(t.date).toLocaleDateString()}</div></div><span class="font-bold ${t.amount>0?'text-green-600':'text-red-600'}">${t.amount>0?'+':''}${t.amount} BYN</span></div>`).join(''); }
+        document.getElementById('applyTransFilter').addEventListener('click', applyTransactionsFilter);
+
+        async function submitReview(orderId, rating, comment) {
+            try {
+                const res = await fetch('/api/Reviews', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ orderId: parseInt(orderId), rating, comment }) });
+                if(res.ok) { showToast('Спасибо за отзыв!', 'success'); loadMyReviews(); loadMyOrders(); }
+                else { const err = await res.text(); showToast('Ошибка: '+err, 'error'); }
+            } catch(e) { showToast('Ошибка сети', 'error'); }
+        }
+
+        // ИСПРАВЛЕННАЯ функция загрузки отзывов (парсим объект)
+        async function loadMyReviews() {
+            const container = document.getElementById('reviewsList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка отзывов...</div>';
+            try {
+                const res = await fetch('/api/Reviews/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Ожидаем структуру: { totalCount, averageRating, reviews: [] }
+                    const reviews = data.reviews || [];
+                    const totalCount = data.totalCount || reviews.length;
+                    const avgRating = data.averageRating || 0;
+                    document.getElementById('avgRating').innerText = avgRating;
+                    document.getElementById('totalReviews').innerText = `(${totalCount} отзывов)`;
+                    if (reviews.length === 0) { container.innerHTML = '<div class="text-center py-8 text-[#5A4A44]">Пока нет отзывов</div>'; return; }
+                    container.innerHTML = reviews.map(r => `
+                        <div class="bg-[#FCF9F7] p-4 rounded-xl border border-[#D4CDCB]">
+                            <div class="flex justify-between items-start"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[#D4CDCB] flex items-center justify-center"><i data-lucide="user" class="w-4 h-4 text-[#5A4A44]"></i></div><div><p class="font-bold text-sm text-[#161B2F]">${escapeHtml(r.authorName)}</p><div class="flex gap-0.5">${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-3 h-3 ${i < r.rating ? 'text-yellow-500 fill-yellow-500' : 'text-[#8D8F8E]'}"></i>`).join('')}</div></div></div><span class="text-[10px] text-[#5A4A44]">${new Date(r.createdAt).toLocaleDateString()}</span></div>
+                            <p class="text-sm text-[#5A4A44] mt-2 ml-11">${escapeHtml(r.comment)}</p>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                } else throw new Error();
+            } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки отзывов</div>'; console.error(e); }
+        }
+
+        async function showUserProfile(userId) {
+            const modal = document.getElementById('profileViewModal');
+            if (!modal) return;
+            try {
+                const res = await fetch(`/api/Users/${userId}/public`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                document.getElementById('modalUserName').innerText = data.fullName;
+                document.getElementById('modalUserRole').innerText = data.role === 'Freelancer' ? 'Фрилансер' : 'Заказчик';
+                document.getElementById('modalRating').innerText = data.averageRating;
+                document.getElementById('modalReviewsCount').innerText = `(${data.totalReviews} отзывов)`;
+                if (data.avatarUrl) { const img = document.getElementById('modalAvatar'); img.src = data.avatarUrl; img.classList.remove('hidden'); document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.add('hidden'); }
+                else { document.getElementById('modalAvatar').classList.add('hidden'); document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.remove('hidden'); }
+                const freelancerDetails = document.getElementById('freelancerDetails'), portfolioSection = document.getElementById('portfolioSection');
+                if (data.role === 'Freelancer') {
+                    freelancerDetails.classList.remove('hidden'); portfolioSection.classList.remove('hidden');
+                    document.getElementById('modalHourlyRate').innerText = data.hourlyRate ? `${data.hourlyRate} BYN` : 'Не указана';
+                    const skillsContainer = document.getElementById('modalSkills'), skillsList = data.skills ? data.skills.split(',').map(s => s.trim()) : [];
+                    skillsContainer.innerHTML = skillsList.length ? skillsList.map(s => `<span class="bg-[#D4CDCB] px-2 py-0.5 rounded text-xs text-[#161B2F]">${escapeHtml(s)}</span>`).join('') : '<span class="text-[#5A4A44] text-xs">Не указаны</span>';
+                    document.getElementById('modalBio').innerText = data.bio || 'Нет описания';
+                    const portfolioContainer = document.getElementById('modalPortfolio');
+                    portfolioContainer.innerHTML = data.portfolio?.length ? data.portfolio.map(p => `<div class="bg-[#FCF9F7] p-3 rounded-xl border border-[#D4CDCB]"><div class="font-bold text-sm text-[#161B2F]">${escapeHtml(p.title)}</div><div class="text-xs text-[#5A4A44] mt-1">${escapeHtml(p.description)}</div>${p.link ? `<a href="${p.link}" target="_blank" class="text-[#5B687C] text-xs mt-2 inline-block">🔗 Смотреть проект</a>` : ''}</div>`).join('') : '<div class="text-[#5A4A44] text-sm">Нет работ в портфолио</div>';
+                } else { freelancerDetails.classList.add('hidden'); portfolioSection.classList.add('hidden'); }
+                const reviewsContainer = document.getElementById('modalReviews');
+                if (data.reviews?.length) { reviewsContainer.innerHTML = data.reviews.map(r => `<div class="bg-[#FCF9F7] p-3 rounded-xl"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><div class="flex gap-0.5">${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-3 h-3 ${i < r.rating ? 'text-yellow-500 fill-yellow-500' : 'text-[#8D8F8E]'}"></i>`).join('')}</div><span class="text-xs font-bold text-[#5A4A44]">${escapeHtml(r.authorName)}</span></div><span class="text-[10px] text-[#5A4A44]">${new Date(r.createdAt).toLocaleDateString()}</span></div><p class="text-sm mt-2 text-[#5A4A44]">${escapeHtml(r.comment)}</p></div>`).join(''); }
+                else { reviewsContainer.innerHTML = '<div class="text-[#5A4A44] text-sm">Нет отзывов</div>'; }
+                lucide.createIcons();
+                modal.classList.remove('hidden'); modal.style.display = 'flex';
+            } catch(e) { alert('Не удалось загрузить профиль'); }
+        }
+        document.getElementById('closeProfileViewModal')?.addEventListener('click', () => { const modal = document.getElementById('profileViewModal'); modal.classList.add('hidden'); modal.style.display = 'none'; });
+
+        async function loadNotifications() {
+            const container = document.getElementById('notificationsList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка уведомлений...</div>';
+            try {
+                const res = await fetch('/api/Notifications/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    const notifications = data.notifications || data;
+                    if (!notifications.length) { container.innerHTML = '<div class="text-center py-8 text-[#5A4A44]">Уведомлений пока нет</div>'; return; }
+                    container.innerHTML = notifications.map(n => `<div class="bg-[#FCF9F7] p-4 rounded-xl border border-[#D4CDCB] ${!n.isRead ? 'border-l-4 border-l-[#5B687C]' : ''}"><div class="flex justify-between items-start"><div class="text-sm text-[#161B2F]/90 whitespace-pre-line">${escapeHtml(n.text)}</div><span class="text-[10px] text-[#5A4A44] ml-4">${new Date(n.createdAt).toLocaleDateString()}</span></div>${!n.isRead ? `<button class="mark-read-btn text-xs text-[#5B687C] mt-2 hover:underline" data-id="${n.id}">Отметить прочитанным</button>` : ''}</div>`).join('');
+                    document.querySelectorAll('.mark-read-btn').forEach(btn => btn.addEventListener('click', async () => { await fetch(`/api/Notifications/${btn.dataset.id}/read`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadNotifications(); }));
+                } else throw new Error();
+            } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки уведомлений</div>'; }
+        }
+        document.getElementById('markAllReadBtn')?.addEventListener('click', async () => { const btns = document.querySelectorAll('.mark-read-btn'); for (let btn of btns) await fetch(`/api/Notifications/${btn.dataset.id}/read`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadNotifications(); });
+
+        async function loadAdminMessages() {
+            const container = document.getElementById('adminChatMessages');
+            container.innerHTML = '<div class="text-center py-4 text-[#5A4A44]">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/AdminMessages/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    let messages = await res.json();
+                    if (!messages.length) { container.innerHTML = '<div class="text-center py-8 text-[#5A4A44]">Нет сообщений. Напишите администратору.</div>'; return; }
+                    container.innerHTML = messages.map(m => `<div class="flex ${m.isFromAdmin ? 'justify-start' : 'justify-end'}"><div class="max-w-[75%] ${m.isFromAdmin ? 'bg-white border border-[#D4CDCB]' : 'bg-[#5B687C]/10 border border-[#5B687C]/20'} rounded-xl p-3"><div class="text-xs ${m.isFromAdmin ? 'text-[#5A4A44]' : 'text-[#5B687C]'} mb-1">${m.isFromAdmin ? 'Администратор' : 'Вы'}</div><div class="text-sm break-words text-[#161B2F]">${escapeHtml(m.message)}</div><div class="text-[10px] text-white/30 text-right mt-1">${new Date(m.sentAt).toLocaleString()}</div></div></div>`).join('');
+                    container.scrollTop = container.scrollHeight;
+                } else container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки сообщений</div>';
+            } catch(e) { container.innerHTML = '<div class="text-red-500 text-center">Ошибка сети</div>'; }
+        }
+        document.getElementById('sendAdminMessageBtn')?.addEventListener('click', async () => { const msg = document.getElementById('adminChatInput').value.trim(); if (!msg) return; try { const res = await fetch('/api/AdminMessages/send', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: msg }) }); if (res.ok) { document.getElementById('adminChatInput').value = ''; loadAdminMessages(); showToast('Сообщение отправлено', 'success'); } else alert('Ошибка отправки'); } catch(e) { alert('Ошибка сети'); } });
+
+        async function loadSubscriptionStatus() {
+            try {
+                const res = await fetch('/api/Subscriptions/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { const data = await res.json(); const infoDiv = document.getElementById('subscriptionInfo'); if (data.hasActiveSubscription) { infoDiv.classList.remove('hidden'); document.getElementById('subscriptionPlanName').innerText = data.planName; document.getElementById('subscriptionExpiry').innerHTML = `до ${new Date(data.endDate).toLocaleDateString()} (${data.daysLeft} дн.)`; } else infoDiv.classList.add('hidden'); }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadAchievements() {
+            const container = document.getElementById('achievementsList');
+            container.innerHTML = '<div class="text-center py-6 text-sm text-[#5A4A44]">Загрузка достижений...</div>';
+            try {
+                const res = await fetch('/api/Achievements/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    let achievements = await res.json();
+                    if (!achievements.length) { container.innerHTML = '<div class="text-center text-[#5A4A44]">Нет достижений. Выполняйте заказы и подтверждайте email, чтобы получать награды!</div>'; return; }
+                    container.innerHTML = achievements.map(a => `<div class="bg-[#FCF9F7] p-3 rounded-xl flex items-center gap-3 border border-[#D4CDCB]"><i data-lucide="${a.icon || 'award'}" class="w-5 h-5 text-[#5B687C]"></i><div><div class="font-bold">${escapeHtml(a.name)}</div><div class="text-xs text-[#5A4A44]">${escapeHtml(a.description)}</div></div></div>`).join('');
+                    lucide.createIcons();
+                } else container.innerHTML = '<div class="text-red-500">Ошибка загрузки достижений</div>';
+            } catch(e) { container.innerHTML = '<div class="text-red-500">Ошибка сети</div>'; }
+        }
+
+        async function loadWalletInfo() {
+            try {
+                const res = await fetch('/api/Wallet/my', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('walletBalance').innerText = (data.balance || 0).toFixed(2);
+                    if (data.hasCard) { document.getElementById('linkedCardInfo').innerHTML = `💳 Карта **** ${data.lastFourDigits} <button id="changeCardBtn" class="text-xs text-[#5B687C] underline ml-2">сменить</button>`; document.getElementById('changeCardBtn')?.addEventListener('click', () => document.getElementById('linkCardModal').classList.remove('hidden')); }
+                    else { document.getElementById('linkedCardInfo').innerHTML = 'Карта не привязана. <button id="linkCardBtn" class="text-xs text-[#5B687C] underline ml-2">Привязать</button>'; document.getElementById('linkCardBtn')?.addEventListener('click', () => document.getElementById('linkCardModal').classList.remove('hidden')); }
+                } else { document.getElementById('walletBalance').innerText = '0.00'; document.getElementById('linkedCardInfo').innerHTML = 'Карта не привязана'; }
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('confirmLinkCardBtn')?.addEventListener('click', async () => {
+            const cardNumber = document.getElementById('linkCardNumber').value.replace(/\s/g, ''), expiry = document.getElementById('linkExpiry').value, cvc = document.getElementById('linkCvc').value, errorDiv = document.getElementById('linkCardError');
+            errorDiv.classList.add('hidden');
+            if (!/^\d{16}$/.test(cardNumber)) { errorDiv.innerText = 'Неверный номер карты'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{2}\/\d{2}$/.test(expiry)) { errorDiv.innerText = 'Неверный срок (MM/YY)'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{3}$/.test(cvc)) { errorDiv.innerText = 'CVC должен содержать 3 цифры'; errorDiv.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/Wallet/link-card', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ cardNumber, expiry, cvc }) });
+                if (res.ok) { showToast('Карта привязана', 'success'); document.getElementById('linkCardModal').classList.add('hidden'); loadWalletInfo(); }
+                else { errorDiv.innerText = await res.text(); errorDiv.classList.remove('hidden'); }
+            } catch(e) { showToast('Ошибка сети при привязке карты', 'error'); }
+        });
+
+        document.getElementById('openWalletDepositBtn')?.addEventListener('click', () => document.getElementById('walletDepositModal').classList.remove('hidden'));
+        document.getElementById('confirmWalletDepositBtn')?.addEventListener('click', async () => {
+            const amount = parseFloat(document.getElementById('walletDepositAmount').value), cardNumber = document.getElementById('depositCardNumber').value.replace(/\s/g, ''), expiry = document.getElementById('depositExpiry').value, cvc = document.getElementById('depositCvc').value, errorDiv = document.getElementById('walletDepositError');
+            errorDiv.classList.add('hidden');
+            if (isNaN(amount) || amount <= 0) { errorDiv.innerText = 'Введите корректную сумму'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{16}$/.test(cardNumber)) { errorDiv.innerText = 'Неверный номер карты'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{2}\/\d{2}$/.test(expiry)) { errorDiv.innerText = 'Неверный срок'; errorDiv.classList.remove('hidden'); return; }
+            if (!/^\d{3}$/.test(cvc)) { errorDiv.innerText = 'CVC должен содержать 3 цифры'; errorDiv.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/Wallet/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ amount, cardNumber, expiry, cvc }) });
+                if (res.ok) { showToast(`Кошелёк пополнен на ${amount} BYN`, 'success'); document.getElementById('walletDepositModal').classList.add('hidden'); loadWalletInfo(); document.getElementById('walletDepositAmount').value = ''; document.getElementById('depositCardNumber').value = ''; document.getElementById('depositExpiry').value = ''; document.getElementById('depositCvc').value = ''; }
+                else { errorDiv.innerText = await res.text(); errorDiv.classList.remove('hidden'); }
+            } catch(e) { showToast('Ошибка сети', 'error'); }
+        });
+
+        const transferModal = document.getElementById('transferModal');
+        const closeTransferModal = document.getElementById('closeTransferModal');
+        const confirmTransferBtn = document.getElementById('confirmTransferBtn');
+        const transferAmountInput = document.getElementById('transferAmount');
+        const transferErrorDiv = document.getElementById('transferError');
+        const transferErrorText = document.getElementById('transferErrorText');
+        document.getElementById('transferToPlatformBtn')?.addEventListener('click', () => { transferAmountInput.value = ''; transferErrorDiv.classList.add('hidden'); transferModal.classList.remove('hidden'); });
+        if (closeTransferModal) closeTransferModal.addEventListener('click', () => transferModal.classList.add('hidden'));
+        confirmTransferBtn.addEventListener('click', async () => {
+            const amount = parseFloat(transferAmountInput.value);
+            transferErrorDiv.classList.add('hidden');
+            if (isNaN(amount) || amount <= 0) { transferErrorText.innerText = 'Введите корректную сумму (больше 0)'; transferErrorDiv.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/Wallet/transfer-to-platform', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ amount: amount }) });
+                if (res.ok) { showToast(`Переведено ${amount} BYN на счёт платформы`, 'success'); transferModal.classList.add('hidden'); loadWalletInfo(); loadBalance(); }
+                else { const errText = await res.text(); transferErrorText.innerText = errText || 'Ошибка при переводе'; transferErrorDiv.classList.remove('hidden'); }
+            } catch(e) { transferErrorText.innerText = 'Ошибка сети. Попробуйте позже.'; transferErrorDiv.classList.remove('hidden'); }
+        });
+
+        document.getElementById('closeLinkCardModal')?.addEventListener('click', () => document.getElementById('linkCardModal').classList.add('hidden'));
+        document.getElementById('closeWalletDepositModal')?.addEventListener('click', () => document.getElementById('walletDepositModal').classList.add('hidden'));
+
+        async function loadProfileData() {
+            try {
+                const res = await fetch('/api/Users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('fullName').value = data.fullName || ''; document.getElementById('phone').value = data.phone || '';
+                    if (data.avatarUrl) { document.getElementById('avatarPreview').src = data.avatarUrl; document.getElementById('avatarPreview').classList.remove('hidden'); document.querySelector('#avatarPreview + i')?.classList.add('hidden'); }
+                    else { document.getElementById('avatarPreview').classList.add('hidden'); document.querySelector('#avatarPreview + i')?.classList.remove('hidden'); }
+                    if (data.avatarUrl) { document.getElementById('avatarImg').src = data.avatarUrl; document.getElementById('avatarImg').classList.remove('hidden'); document.getElementById('avatarPlaceholder').classList.add('hidden'); }
+                    else { document.getElementById('avatarImg').classList.add('hidden'); document.getElementById('avatarPlaceholder').classList.remove('hidden'); }
+                }
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('uploadAvatarBtn')?.addEventListener('click', async () => {
+            const file = document.getElementById('avatarFile').files[0];
+            if (!file) { showToast('Выберите файл', 'error'); return; }
+            const formData = new FormData(); formData.append('avatar', file);
+            try {
+                const res = await fetch('/api/Users/avatar', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+                if (res.ok) { showToast('Аватар обновлён', 'success'); loadProfileData(); }
+                else showToast('Ошибка загрузки', 'error');
+            } catch(e) { showToast('Ошибка сети', 'error'); }
+        });
+        document.getElementById('editProfileBtn').addEventListener('click', () => { loadProfileData(); document.getElementById('profileModal').classList.remove('hidden'); });
+        document.getElementById('closeProfileModal').addEventListener('click', () => document.getElementById('profileModal').classList.add('hidden'));
+        document.getElementById('changeEmailBtn').addEventListener('click', async () => {
+            const newEmail = document.getElementById('newEmail').value.trim(), password = document.getElementById('emailPassword').value;
+            if (!newEmail || !password) { showToast('Заполните данные', 'error'); return; }
+            const res = await fetch('/api/Users/email', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ newEmail, password }) });
+            if (res.ok) { showToast('Email изменён. Войдите заново.', 'success'); localStorage.clear(); setTimeout(() => window.location.href = 'login.html', 1500); } else showToast('Ошибка', 'error');
+        });
+        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+            const oldPass = document.getElementById('oldPassword').value, newPass = document.getElementById('newPassword').value, confirm = document.getElementById('confirmPassword').value;
+            if (!oldPass || !newPass || newPass !== confirm) { showToast('Пароли не совпадают', 'error'); return; }
+            const res = await fetch('/api/Users/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass }) });
+            if (res.ok) { showToast('Пароль обновлён. Войдите заново.', 'success'); localStorage.clear(); setTimeout(() => window.location.href = 'login.html', 1500); } else showToast('Ошибка', 'error');
+        });
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value, phone = document.getElementById('phone').value;
+            await fetch('/api/Users/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ fullName, phone }) });
+            showToast('Личные данные обновлены', 'success');
+            document.getElementById('userNameHeading').innerText = fullName || 'Заказчик';
+            document.getElementById('profileModal').classList.add('hidden');
+            loadProfileData();
+        });
+
+        async function loadCategories() {
+            const select = document.getElementById('orderCategory');
+            select.innerHTML = '<option value="">Загрузка категорий...</option>';
+            try {
+                const res = await fetch('/api/Admin/public/categories');
+                if (res.ok) { const cats = await res.json(); select.innerHTML = ''; cats.forEach(cat => { select.innerHTML += `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`; }); }
+                else select.innerHTML = '<option value="">Ошибка загрузки</option>';
+            } catch(e) { select.innerHTML = '<option value="">Ошибка сети</option>'; }
+        }
+        document.getElementById('createOrderBtn').addEventListener('click', () => { loadCategories(); document.getElementById('createOrderModal').classList.remove('hidden'); });
+        document.getElementById('closeOrderModal').addEventListener('click', () => document.getElementById('createOrderModal').classList.add('hidden'));
+        document.getElementById('createOrderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('orderTitle').value, description = document.getElementById('orderDesc').value, budget = parseFloat(document.getElementById('orderBudget').value), deadline = new Date(document.getElementById('orderDeadline').value).toISOString(), categoryId = parseInt(document.getElementById('orderCategory').value);
+            const errorDiv = document.getElementById('orderError'), errorText = document.getElementById('orderErrorText');
+            errorDiv.classList.add('hidden');
+            if (!title || !description || isNaN(budget) || !deadline || isNaN(categoryId)) { errorText.innerText = 'Пожалуйста, заполните все обязательные поля'; errorDiv.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('/api/Orders', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title, description, budget, deadline, categoryId }) });
+                if (res.ok) { showToast('Заказ успешно создан', 'success'); document.getElementById('createOrderModal').classList.add('hidden'); document.getElementById('createOrderForm').reset(); loadMyOrders(); }
+                else { const err = await res.text(); errorText.innerText = err || 'Ошибка при создании заказа'; errorDiv.classList.remove('hidden'); }
+            } catch(e) { errorText.innerText = 'Отсутствует ответ от сервера. Проверьте сеть.'; errorDiv.classList.remove('hidden'); }
+        });
+
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+        function getStatus(s) { if(s==='Pending') return 'На рассмотрении'; if(s==='Accepted') return 'Принят'; if(s==='Rejected') return 'Отклонён'; return s; }
+
+        loadBalance(); loadProfileData(); loadSubscriptionStatus(); loadWalletInfo();
+    </script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FreelanceExchange — Платформа безопасного фриланса</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',              // светлый фон
+                        основной: '#161B2F',         // почти чёрно-синий для текста
+                        втор: '#17181F',             // очень тёмный серый
+                        акцент: '#5B687C',           // приглушённый сине-серый
+                        мягкий: '#8D8F8E',           // серебристо-серый
+                        светлый: '#D4CDCB',          // светло-бежевый
+                        карта: '#FFFFFF',            // белые карточки
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        /* декоративные световые узлы */
+        .световой-узел {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .дизайн-сетка {
+            background-image: linear-gradient(rgba(141,143,142,0.08) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(141,143,142,0.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background-color: #5B687C;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary:hover {
+            background-color: #3A4454;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(91,104,124,0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #8D8F8E;
+            color: #161B2F;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover {
+            background-color: rgba(212,205,203,0.2);
+            border-color: #5B687C;
+            color: #17181F;
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        @media (max-width: 768px) {
+            h1.font-display {
+                font-size: 2.5rem !important;
+                line-height: 1.2 !important;
+            }
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .премиум-карта {
+                padding: 1.5rem !important;
+            }
+            .световой-узел {
+                width: 300px;
+                height: 300px;
+            }
+        }
+        @media (max-width: 640px) {
+            .btn-primary, .btn-outline {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased font-sans relative">
+
+    <!-- декоративные световые узлы -->
+    <div class="световой-узел top-[-10%] left-[15%]"></div>
+    <div class="световой-узел top-[40%] right-[-10%]"></div>
+
+    <!-- ШАПКА (единая) -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+            <a href="#" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            
+            <nav class="hidden md:flex space-x-8">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#161B2F] hover:text-[#5B687C] transition-colors">Поиск проектов</a>
+                <a href="#преимущества" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#17181F] transition-colors">Технологии</a>
+            </nav>
+
+            <div id="authBlock" class="text-xs uppercase tracking-widest font-bold flex items-center space-x-4">
+                <!-- динамическое содержимое -->
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero секция -->
+        <section class="relative pt-20 pb-28 z-10">
+            <div class="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                
+                <div class="lg:col-span-6 space-y-8 text-left">
+                    <div class="inline-flex items-center gap-2 bg-white border border-[#D4CDCB] px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest text-[#5A4A44] shadow-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#5B687C]"></span> Платформа нового поколения
+                    </div>
+                    
+                    <h1 class="font-display text-5xl sm:text-6xl md:text-7xl font-black text-[#161B2F] tracking-tighter leading-[0.95]">
+                        Умные контракты.<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#5B687C] to-[#8D8F8E]">Безупречный</span> фриланс.
+                    </h1>
+                    
+                    <p class="text-lg sm:text-xl text-[#5A4A44] font-normal max-w-xl leading-relaxed">
+                        Пространство, где бизнес находит исполнителей без посредников, переплат и рисков. Безопасность каждого этапа контролируется автоматической системой защиты сделок.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <a href="register.html" class="bg-[#5B687C] text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-full hover:bg-[#3A4454] transition-all text-center shadow-md">Создать аккаунт</a>
+                        <a href="catalog.html" class="bg-transparent border border-[#8D8F8E] text-[#161B2F] font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-full hover:bg-[#D4CDCB] transition-all text-center">Смотреть проекты</a>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-6">
+                    <div class="relative p-1 rounded-2xl bg-gradient-to-br from-white to-[#D4CDCB]">
+                        <div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 sm:p-8 space-y-6 shadow-lg">
+                            
+                            <div class="flex justify-between items-center border-b border-[#D4CDCB] pb-4 flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-[#8D8F8E]"></span>
+                                    <span class="text-xs font-mono tracking-widest text-[#5A4A44] uppercase font-bold">Мониторинг сети / Беларусь</span>
+                                </div>
+                                <span class="text-xs font-mono font-bold text-[#5B687C]">Сейф: Активен</span>
+                            </div>
+
+                            <div class="p-4 bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl flex justify-between items-center hover:border-[#5B687C] transition-colors flex-wrap gap-3">
+                                <div class="space-y-1">
+                                    <p class="text-sm font-bold text-[#161B2F]">Интеграция платежного шлюза</p>
+                                    <p class="text-xs text-[#5A4A44]">Статус: <span class="text-amber-700 font-medium">Идет подбор автора</span></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-mono font-bold text-[#161B2F]">890 BYN</p>
+                                    <p class="text-[10px] text-[#5A4A44] uppercase tracking-wider font-bold">Гарант</p>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-[#FCF9F7] border border-[#D4CDCB] rounded-xl flex justify-between items-center hover:border-[#5B687C] transition-colors flex-wrap gap-3">
+                                <div class="space-y-1">
+                                    <p class="text-sm font-bold text-[#161B2F]">Разработка айдентики бренда</p>
+                                    <p class="text-xs text-[#5A4A44]">Статус: <span class="text-emerald-700 font-medium">Проект запущен</span></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-mono font-bold text-[#161B2F]">400 BYN</p>
+                                    <p class="text-[10px] text-[#5A4A44] uppercase tracking-wider font-bold">Заморожено</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 pt-2 text-center">
+                                <div class="bg-[#FCF9F7] p-4 rounded-lg border border-[#D4CDCB]">
+                                    <p class="text-sm font-mono font-bold text-[#161B2F]">14.2к</p>
+                                    <p class="text-[10px] text-[#5A4A44] uppercase font-bold tracking-wide">Авторов</p>
+                                </div>
+                                <div class="bg-[#FCF9F7] p-4 rounded-lg border border-[#D4CDCB]">
+                                    <p class="text-sm font-mono font-bold text-[#161B2F]">2.4 мин</p>
+                                    <p class="text-[10px] text-[#5A4A44] uppercase font-bold tracking-wide">Отклик</p>
+                                </div>
+                                <div class="bg-[#FCF9F7] p-4 rounded-lg border border-[#D4CDCB]">
+                                    <p class="text-sm font-mono font-bold text-emerald-600">100%</p>
+                                    <p class="text-[10px] text-[#5A4A44] uppercase font-bold tracking-wide">Защита</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Секция преимуществ -->
+        <section id="преимущества" class="py-24 relative z-10 border-t border-[#D4CDCB] bg-white/30">
+            <div class="container mx-auto px-4 sm:px-6">
+                <div class="max-w-xl mb-16">
+                    <p class="text-xs uppercase tracking-widest font-bold text-[#5B687C] mb-2">// Архитектура платформы</p>
+                    <h2 class="font-display text-3xl sm:text-4xl font-black text-[#161B2F] tracking-tight">Никакой воды. Только инструменты для дела.</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div class="премиум-карта md:col-span-2 rounded-xl p-6 sm:p-10 flex flex-col justify-between min-h-[300px] bg-white">
+                        <div class="space-y-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#D4CDCB] flex items-center justify-center text-[#161B2F]">
+                                <i data-lucide="terminal" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="font-display text-2xl font-bold text-[#161B2F]">Умное размещение для бизнеса</h3>
+                            <p class="text-base text-[#5A4A44] leading-relaxed">
+                                Опишите задачу в свободной форме. Алгоритмы платформы автоматически структурируют бриф, определят категорию и мгновенно оповестят подходящих исполнителей с наивысшим рейтингом в Беларуси.
+                            </p>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-[#5B687C] uppercase tracking-widest pt-6">01 / Автоматизация</span>
+                    </div>
+
+                    <div class="премиум-карта rounded-xl p-6 sm:p-10 flex flex-col justify-between min-h-[300px] bg-white">
+                        <div class="space-y-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#D4CDCB] flex items-center justify-center text-[#161B2F]">
+                                <i data-lucide="shield" class="w-5 h-5"></i>
+                            </div>
+                            <h4 class="font-display text-2xl font-bold text-[#161B2F]">Система «Сейф»</h4>
+                            <p class="text-base text-[#5A4A44] leading-relaxed">
+                                Все финансовые потоки полностью защищены. Средства резервируются на платформе перед началом работы и перечисляются автору только после вашего цифрового утверждения.
+                            </p>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-[#5B687C] uppercase tracking-widest pt-6">02 / Безопасность</span>
+                    </div>
+
+                    <div class="премиум-карта rounded-xl p-6 sm:p-10 flex flex-col justify-between min-h-[300px] bg-white">
+                        <div class="space-y-6">
+                            <div class="w-10 h-10 rounded-lg bg-[#D4CDCB] flex items-center justify-center text-[#161B2F]">
+                                <i data-lucide="activity" class="w-5 h-5"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="text-4xl font-display font-black text-[#161B2F]">99.4%</div>
+                                <p class="text-sm text-[#5A4A44] font-medium">Индекс успешного закрытия сложных технических контрактов без привлечения арбитража.</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-[#5B687C] uppercase tracking-widest">03 / Точность</span>
+                    </div>
+
+                    <div class="премиум-карта md:col-span-2 rounded-xl p-6 sm:p-10 flex flex-col justify-between min-h-[300px] bg-white">
+                        <div class="space-y-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#D4CDCB] flex items-center justify-center text-[#161B2F]">
+                                <i data-lucide="cpu" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="font-display text-2xl font-bold text-[#161B2F]">Прямой доступ к заказам для специалистов</h3>
+                            <p class="text-base text-[#5A4A44] leading-relaxed">
+                                Выстраивайте прозрачные отношения с заказчиками. Создавайте портфолио, собирайте подтвержденные отзывы, фиксируйте этапы выполнения в системе и выводите честно заработанные средства мгновенно.
+                            </p>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-[#5B687C] uppercase tracking-widest pt-6">04 / Свобода</span>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Этапы работы -->
+        <section class="py-24 border-t border-[#D4CDCB] bg-white/40">
+            <div class="container mx-auto px-4 sm:px-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <div class="space-y-4 border-l-2 border-[#D4CDCB] pl-5 hover:border-[#5B687C] transition-colors py-1">
+                        <p class="font-mono text-xs text-[#5B687C] font-bold tracking-wider">01 / ИНИЦИАЦИЯ</p>
+                        <h5 class="text-lg font-bold text-[#161B2F]">Создание профиля</h5>
+                        <p class="text-sm text-[#5A4A44] leading-relaxed">Мгновенный старт, выбор роли и заполнение базовых компетенций.</p>
+                    </div>
+
+                    <div class="space-y-4 border-l-2 border-[#D4CDCB] pl-5 hover:border-[#5B687C] transition-colors py-1">
+                        <p class="font-mono text-xs text-[#5B687C] font-bold tracking-wider">02 / СОГЛАСОВАНИЕ</p>
+                        <h5 class="text-lg font-bold text-[#161B2F]">Публикация брифа</h5>
+                        <p class="text-sm text-[#5A4A44] leading-relaxed">Установка дедлайнов, фиксация требований и обсуждение деталей в чате.</p>
+                    </div>
+
+                    <div class="space-y-4 border-l-2 border-[#D4CDCB] pl-5 hover:border-[#5B687C] transition-colors py-1">
+                        <p class="font-mono text-xs text-[#5B687C] font-bold tracking-wider">03 / БЛОКИРОВКА</p>
+                        <h5 class="text-lg font-bold text-[#161B2F]">Депонирование средств</h5>
+                        <p class="text-sm text-[#5A4A44] leading-relaxed">Замораживание бюджета в системе «Сейф» для безопасности сторон.</p>
+                    </div>
+
+                    <div class="space-y-4 border-l-2 border-[#D4CDCB] pl-5 hover:border-[#5B687C] transition-colors py-1">
+                        <p class="font-mono text-xs text-[#5B687C] font-bold tracking-wider">04 / РАСЧЕТ</p>
+                        <h5 class="text-lg font-bold text-[#161B2F]">Приемка и закрытие</h5>
+                        <p class="text-sm text-[#5A4A44] leading-relaxed">Проверка итоговых файлов и автоматический перевод денег исполнителю.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="py-16 px-4 sm:px-6">
+            <div class="container mx-auto max-w-5xl bg-gradient-to-r from-[#D4CDCB] to-white rounded-2xl p-8 sm:p-12 text-center border border-[#5B687C] shadow-lg relative overflow-hidden">
+                <div class="space-y-6 max-w-lg mx-auto relative z-10">
+                    <h3 class="font-display text-2xl sm:text-3xl font-black text-[#161B2F] tracking-tight">НАЧНИТЕ РАБОТУ В НОВОМ ИНТЕРФЕЙСЕ</h3>
+                    <p class="text-sm text-[#5A4A44] leading-relaxed">
+                        Присоединяйтесь к экосистеме FreelanceExchange. Настраивайте безопасные контракты за секунды.
+                    </p>
+                    <a href="register.html" class="inline-block bg-[#5B687C] text-white font-bold text-xs uppercase tracking-widest py-4 px-10 rounded-full hover:bg-[#3A4454] transition-all shadow-md">
+                        Создать аккаунт
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ПОДВАЛ (единый) -->
+    <footer class="py-12 border-t border-[#D4CDCB] bg-white/70">
+        <div class="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="text-center sm:text-left space-y-1">
+                <p class="font-display text-base tracking-widest font-black text-[#161B2F]">FreelanceExchange</p>
+                <p class="text-xs text-[#5A4A44]">© 2026 Безопасная фриланс-инфраструктура. Все права защищены.</p>
+            </div>
+            <div class="flex space-x-10 text-xs font-bold uppercase tracking-widest">
+                <button onclick="openModal('rulesModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Регламент</button>
+                <button onclick="openModal('supportModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Поддержка</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модалки -->
+    <div id="rulesModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-xl p-8 sm:p-10 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('rulesModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-4">
+                <span class="text-xs font-mono text-[#5B687C] font-bold uppercase tracking-widest">Безопасность</span>
+                <h3 class="font-display text-2xl font-bold">Правила экосистемы</h3>
+                <div class="text-[#5A4A44] text-sm leading-relaxed space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                    <p><strong class="text-[#161B2F]">1. Идентификация.</strong> Все аккаунты проходят автоматическую модерацию. Запрещено дублирование профилей и использование фейковых портфолио.</p>
+                    <p><strong class="text-[#161B2F]">2. Финансовая защита.</strong> Проведение сделок в обход «Сейфа» запрещено политикой безопасности платформы FreelanceExchange.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="supportModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-sm p-8 sm:p-10 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('supportModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-6 text-center">
+                <h3 class="font-display text-xl font-bold">Служба заботы FreelanceExchange</h3>
+                <p class="text-[#5A4A44] text-sm leading-relaxed">
+                    Решаем вопросы верификации, вывода средств и технических сбоев 24/7.
+                </p>
+                <div class="space-y-2">
+                    <a href="mailto:help@uzel.by" class="block w-full bg-[#D4CDCB] border border-[#5B687C] py-4 rounded-full text-xs font-bold text-[#161B2F] transition-colors hover:bg-[#5B687C] hover:text-white">
+                        help@uzel.by
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.modal-blur').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) closeModal(this.id);
+            });
+        });
+
+        // Блок авторизации
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+
+        if (token && user.fullName) {
+            authBlock.innerHTML = `
+                <button id="logoutBtn" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Выйти</button> 
+                <a href="${getDashboardUrl(user.role)}" class="bg-[#5B687C] text-white px-4 py-2 rounded-full hover:bg-[#3A4454] transition-all ml-4 shadow-sm">Кабинет</a>
+            `;
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                localStorage.clear();
+                window.location.reload();
+            });
+        } else {
+            authBlock.innerHTML = `
+                <a href="login.html" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Вход</a> 
+                <a href="register.html" class="bg-[#5B687C] text-white px-4 py-2 rounded-full hover:bg-[#3A4454] transition-all ml-4 shadow-sm">Регистрация</a>
+            `;
+        }
+
+        function getDashboardUrl(role) {
+            if (role === 'Customer') return 'customer-dashboard.html';
+            if (role === 'Freelancer') return 'freelancer-dashboard.html';
+            if (role === 'Moderator') return 'moderator-dashboard.html';
+            if (role === 'Admin') return 'admin-dashboard.html';
+            return '#';
+        }
+    </script>
+</body>
+</html>

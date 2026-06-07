@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Регистрация | FreelanceExchange</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        втор: '#17181F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        .селект-стиль {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238D8F8E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+        .селект-стиль option {
+            background-color: #FFFFFF;
+            color: #161B2F;
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #161B2F !important;
+            -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+            background-color: white !important;
+        }
+        .error-field {
+            border-color: #DBA1A2 !important;
+            background-color: rgba(219,161,162,0.05) !important;
+        }
+        .field-error {
+            font-size: 0.7rem;
+            color: #DBA1A2;
+            margin-top: 0.25rem;
+            margin-left: 0.25rem;
+        }
+        @media (max-width: 640px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .премиум-карта { padding: 1.5rem !important; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 relative antialiased font-sans overflow-y-auto">
+
+    <!-- декоративные световые узлы -->
+    <div class="световой-узел top-[-20%] right-[-10%]"></div>
+    <div class="световой-узел bottom-[-20%] left-[-10%]"></div>
+
+    <div class="relative z-10 w-full max-w-md my-8">
+        <a href="index.html" class="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors mb-6 group pl-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-1"></i>
+            На главную
+        </a>
+
+        <div class="премиум-карта rounded-2xl p-8 sm:p-10 relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#5B687C] to-transparent"></div>
+            <div class="text-center mb-8">
+                <div class="inline-flex w-14 h-14 rounded-xl bg-[#D4CDCB] items-center justify-center mb-4 shadow-inner">
+                    <i data-lucide="user-plus" class="w-6 h-6 text-[#161B2F]"></i>
+                </div>
+                <h1 class="font-display text-2xl sm:text-3xl font-black text-[#161B2F] tracking-tight">Регистрация</h1>
+                <p class="text-[#5A4A44] text-xs sm:text-sm mt-2 font-light">Станьте частью экосистемы FreelanceExchange</p>
+            </div>
+
+            <!-- Добавлен атрибут novalidate -->
+            <form id="registerForm" class="space-y-4" novalidate>
+                <div class="field-wrapper">
+                    <label for="fullName" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">ФИО</label>
+                    <div class="инпут-блок">
+                        <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                        </div>
+                        <input type="text" id="fullName" required placeholder="Иванов Иван Иванович" class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                    </div>
+                    <div class="field-error hidden" id="error-fullName"></div>
+                </div>
+
+                <div class="field-wrapper">
+                    <label for="email" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Электронная почта</label>
+                    <div class="инпут-блок">
+                        <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </div>
+                        <input type="email" id="email" required placeholder="name@domain.com" class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                    </div>
+                    <div class="field-error hidden" id="error-email"></div>
+                </div>
+
+                <div class="field-wrapper">
+                    <label for="role" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Роль на платформе</label>
+                    <div class="инпут-блок">
+                        <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
+                            <i data-lucide="briefcase" class="w-4 h-4"></i>
+                        </div>
+                        <select id="role" class="селект-стиль w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none cursor-pointer">
+                            <option value="Customer">Заказчик</option>
+                            <option value="Freelancer">Фрилансер</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field-wrapper">
+                    <label for="password" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Пароль</label>
+                    <div class="инпут-блок">
+                        <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </div>
+                        <input type="password" id="password" required placeholder="••••••••" class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                    </div>
+                    <div class="field-error hidden" id="error-password"></div>
+                </div>
+
+                <div class="field-wrapper">
+                    <label for="confirmPassword" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Подтверждение пароля</label>
+                    <div class="инпут-блок">
+                        <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
+                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                        </div>
+                        <input type="password" id="confirmPassword" required placeholder="••••••••" class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                    </div>
+                    <div class="field-error hidden" id="error-confirmPassword"></div>
+                </div>
+
+                <div id="errorBlock" class="hidden items-center gap-2 bg-[#EFD8D6] border border-[#DBA1A2] rounded-xl p-3 text-[#422B23] text-xs">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                    <span id="errorMsg"></span>
+                </div>
+
+                <button type="submit" class="w-full bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-4 rounded-full hover:bg-[#3A4454] transition-all shadow-md active:scale-[0.99] duration-300 mt-2">
+                    Создать аккаунт
+                </button>
+            </form>
+
+            <div class="relative my-6 text-center">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#D4CDCB]"></div></div>
+                <span class="relative bg-white px-3 text-[10px] font-bold uppercase tracking-widest text-[#8D8F8E]">Или</span>
+            </div>
+
+            <p class="text-center text-xs text-[#5A4A44] font-light">
+                Уже зарегистрированы? <a href="login.html" class="text-[#5B687C] font-bold hover:underline ml-1">Войти в аккаунт</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function clearErrors() {
+            document.querySelectorAll('.field-error').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.инпут-блок').forEach(el => el.classList.remove('error-field'));
+            document.getElementById('errorBlock').classList.add('hidden');
+        }
+
+        function showFieldError(fieldId, message) {
+            const errorDiv = document.getElementById(`error-${fieldId}`);
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('hidden');
+            }
+            const input = document.getElementById(fieldId);
+            if (input) input.closest('.инпут-блок').classList.add('error-field');
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErrors();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const role = document.getElementById('role').value;
+            
+            let isValid = true;
+
+            if (!fullName) {
+                showFieldError('fullName', 'Пожалуйста, укажите ваше полное имя');
+                isValid = false;
+            }
+            if (!email) {
+                showFieldError('email', 'Введите адрес электронной почты');
+                isValid = false;
+            } else if (!/^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/.test(email)) {
+                showFieldError('email', 'Введите корректный email (например, name@domain.com)');
+                isValid = false;
+            }
+            if (!password) {
+                showFieldError('password', 'Придумайте пароль');
+                isValid = false;
+            }
+            if (!confirm) {
+                showFieldError('confirmPassword', 'Подтвердите пароль');
+                isValid = false;
+            } else if (password !== confirm) {
+                showFieldError('confirmPassword', 'Пароли не совпадают');
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            try {
+                const res = await fetch('/api/Auth/register', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, email, password, role })
+                });
+                if (res.ok) {
+                    alert('Регистрация прошла успешно! Теперь вы можете войти.');
+                    window.location.href = 'login.html';
+                } else { 
+                    const err = await res.text(); 
+                    const errorDiv = document.getElementById('errorMsg');
+                    errorDiv.textContent = err || 'Произошла ошибка при регистрации. Возможно, такой email уже существует.'; 
+                    document.getElementById('errorBlock').classList.remove('hidden');
+                }
+            } catch { 
+                document.getElementById('errorMsg').textContent = 'Ошибка соединения с сервером. Проверьте подключение к интернету.'; 
+                document.getElementById('errorBlock').classList.remove('hidden');
+            }
+        });
+        
+        // Убираем ошибки при вводе
+        document.querySelectorAll('#registerForm input').forEach(input => {
+            input.addEventListener('input', function() {
+                const fieldName = this.id;
+                const errorDiv = document.getElementById(`error-${fieldName}`);
+                if (errorDiv) errorDiv.classList.add('hidden');
+                this.closest('.инпут-блок')?.classList.remove('error-field');
+                document.getElementById('errorBlock').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

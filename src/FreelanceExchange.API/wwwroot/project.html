@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Проект | FreelanceExchange</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        .chat-container {
+            height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-track { background: #F7F3ED; border-radius: 10px; }
+        .chat-container::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        .chat-container::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        .custom-file-input::-webkit-file-upload-button {
+            background: #F7F3ED; border: none;
+            border-right: 1px solid #D4CDCB;
+            padding: 0.75rem 1rem; color: #5A4A44; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; margin-right: 1rem;
+        }
+        .custom-file-input::-webkit-file-upload-button:hover {
+            background: #EFD8D6; color: #161B2F;
+        }
+        .custom-scroll {
+            scrollbar-width: thin;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #F7F3ED; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        .modal-overlay-close {
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .chat-container { height: 300px; }
+            .премиум-карта { padding: 1rem !important; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+        }
+        @media (max-width: 640px) {
+            .grid.md\:grid-cols-12 { gap: 1rem; }
+        }
+        /* тосты как в кабинете */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            border-left: 4px solid;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.info { border-left-color: #3b82f6; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative antialiased">
+
+    <div class="световой-узел top-[-10%] right-[-10%]"></div>
+    <div class="световой-узел bottom-[10%] left-[-10%]"></div>
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- Кастомный confirm -->
+    <div id="customConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-white/80 backdrop-blur-md p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 max-w-md w-full relative shadow-xl">
+            <button class="close-modal-btn absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 text-[#5B687C]">
+                <i data-lucide="help-circle" class="w-6 h-6"></i>
+                <h3 class="font-display font-black text-lg text-[#161B2F]">Подтверждение действия</h3>
+            </div>
+            <p id="confirmModalText" class="text-sm text-[#5A4A44] leading-relaxed my-4"></p>
+            <div class="flex gap-3 justify-end pt-2">
+                <button id="confirmCancelBtn" class="px-4 py-2.5 rounded-xl border border-[#D4CDCB] text-xs font-bold uppercase tracking-wider text-[#5A4A44] hover:bg-[#F7F3ED] transition-all">Отмена</button>
+                <button id="confirmSuccessBtn" class="px-5 py-2.5 rounded-xl bg-[#5B687C] text-white font-black text-xs uppercase tracking-wider hover:bg-[#3A4454] transition-all shadow-md">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кастомный prompt (для диспута) -->
+    <div id="customPromptModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-white/80 backdrop-blur-md p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 max-w-lg w-full relative shadow-xl">
+            <button class="close-modal-btn absolute top-4 right-4 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-3 text-[#DBA1A2]">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                <h3 class="font-display font-black text-lg text-[#161B2F]">Регистрация диспута в Арбитраже</h3>
+            </div>
+            <p class="text-xs text-[#5A4A44] leading-relaxed my-2">Опишите причину открытия арбитражного диспута. Детально укажите, какие пункты ТЗ не были выполнены. Модератор рассмотрит заявку.</p>
+            <div class="space-y-1 my-3">
+                <textarea id="promptModalInput" rows="4" placeholder="Опишите проблему подробно (минимум 10 символов)..." class="w-full bg-white border border-[#D4CDCB] rounded-xl p-3 text-sm text-[#161B2F] placeholder:text-[#5A4A44]/30 outline-none focus:border-[#5B687C] transition-all resize-none"></textarea>
+                <div class="text-[10px] text-right text-[#5A4A44]/50 font-mono" id="promptCharCount">Символов: 0 / мин. 10</div>
+            </div>
+            <div class="flex gap-3 justify-end pt-2">
+                <button id="promptCancelBtn" class="px-4 py-2.5 rounded-xl border border-[#D4CDCB] text-xs font-bold uppercase tracking-wider text-[#5A4A44] hover:bg-[#F7F3ED] transition-all">Отмена</button>
+                <button id="promptSuccessBtn" disabled class="px-5 py-2.5 rounded-xl bg-[#DBA1A2]/20 border border-[#DBA1A2]/30 text-[#DBA1A2] font-black text-xs uppercase tracking-wider transition-all opacity-50 cursor-not-allowed">Открыть диспут</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра профиля -->
+    <div id="profileViewModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden flex items-center justify-center p-4 modal-overlay-close">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-xl relative">
+            <div class="p-6 border-b border-[#D4CDCB] flex justify-between items-center sticky top-0 bg-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-[#D4CDCB] border border-[#5B687C] overflow-hidden flex items-center justify-center">
+                        <img id="modalAvatar" src="" class="w-full h-full object-cover hidden">
+                        <i data-lucide="user" class="w-6 h-6 text-[#5A4A44]"></i>
+                    </div>
+                    <div>
+                        <h3 id="modalUserName" class="font-display font-black text-xl text-[#161B2F]">Имя пользователя</h3>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span id="modalUserRole" class="text-[#5A4A44]">Роль</span>
+                            <span class="text-[#5B687C]">•</span>
+                            <span id="modalRating" class="text-[#5B687C] font-bold">0.0</span>
+                            <span class="text-[#5A4A44]">/5</span>
+                            <span id="modalReviewsCount" class="text-[#5A4A44]">(0 отзывов)</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="closeProfileViewModal" class="text-[#5A4A44] hover:text-[#161B2F] p-1 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div id="freelancerDetails" class="hidden">
+                    <div class="flex justify-between items-center">
+                        <div><p class="text-[10px] uppercase font-bold text-[#5A4A44]">Ставка в час</p><p id="modalHourlyRate" class="text-2xl font-black text-[#5B687C]">0 BYN</p></div>
+                        <div class="flex flex-wrap gap-2"><span class="text-xs font-bold text-[#161B2F]">Навыки:</span><div id="modalSkills" class="flex flex-wrap gap-1"></div></div>
+                    </div>
+                    <div class="mt-3"><p class="text-[10px] uppercase font-bold text-[#5A4A44]">О себе</p><p id="modalBio" class="text-sm text-[#5A4A44] mt-1"></p></div>
+                </div>
+                <div id="portfolioSection" class="hidden"><h4 class="font-bold text-sm uppercase text-[#5A4A44]">Портфолио</h4><div id="modalPortfolio" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2"></div></div>
+                <div><h4 class="font-bold text-sm uppercase text-[#5A4A44]">Отзывы</h4><div id="modalReviews" class="space-y-3 mt-3 max-h-60 overflow-y-auto custom-scroll"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center max-w-6xl">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <div class="flex items-center space-x-6 sm:space-x-8">
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Проекты</a>
+                <!-- Кнопка Кабинет (динамическая ссылка) -->
+                <a id="cabinetLink" href="#" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors">Кабинет</a>
+                <div id="authBlock" class="flex items-center space-x-4"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-8 relative z-10 max-w-6xl flex-grow">
+        <div id="projectInfo" class="премиум-карта rounded-2xl p-6 sm:p-8 mb-6 animate-slide-up">
+            <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div class="space-y-3 flex-1">
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#F7F3ED] border border-[#D4CDCB] text-[10px] uppercase font-black tracking-widest text-[#5A4A44]">Карточка технического задания</div>
+                    <h1 id="title" class="font-display text-2xl sm:text-3xl font-black text-[#161B2F] tracking-tight">Загрузка данных проекта...</h1>
+                    <p id="description" class="text-[#5A4A44] text-sm font-light leading-relaxed max-w-4xl"></p>
+                    <div class="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-sm">
+                        <span id="budget" class="text-[#5B687C] font-bold flex items-center gap-1.5"></span>
+                        <span id="deadline" class="text-[#5A4A44] flex items-center gap-1.5 font-medium"></span>
+                        <span id="status" class="bg-[#F7F3ED] px-2.5 py-0.5 rounded-lg border border-[#D4CDCB] text-xs font-semibold text-[#161B2F]"></span>
+                    </div>
+                    <div id="partnerProfileBtn" class="mt-3"></div>
+                </div>
+                <div class="flex sm:flex-row md:flex-col lg:flex-row gap-2.5 w-full md:w-auto shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-[#D4CDCB]" id="actionButtons"></div>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-12 gap-6 items-stretch">
+            <div class="премиум-карта rounded-2xl p-5 sm:p-6 md:col-span-7 lg:col-span-8 flex flex-col justify-between animate-slide-up" style="animation-delay: 0.05s;">
+                <div class="border-b border-[#D4CDCB] pb-3 mb-4 flex justify-between items-center flex-wrap gap-2">
+                    <h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F] flex items-center gap-2">
+                        <i data-lucide="message-square" class="w-4 h-4 text-[#5B687C]"></i> Чат по проекту
+                    </h3>
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                </div>
+                <div id="chatMessages" class="chat-container space-y-3 mb-4 text-sm flex-grow"></div>
+                <div class="flex gap-2 items-center bg-white border border-[#D4CDCB] p-1.5 rounded-xl focus-within:border-[#5B687C] transition-all">
+                    <input type="text" id="messageInput" placeholder="Напишите сообщение..." class="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none text-[#161B2F] placeholder:text-[#5A4A44]/30">
+                    <button id="sendBtn" class="bg-[#5B687C] text-white hover:bg-[#3A4454] transition-all px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-1 active:scale-[0.98]">
+                        <span>Отправить</span> <i data-lucide="send" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="премиум-карта rounded-2xl p-5 sm:p-6 md:col-span-5 lg:col-span-4 flex flex-col justify-between animate-slide-up" style="animation-delay: 0.1s;">
+                <div class="w-full">
+                    <div class="border-b border-[#D4CDCB] pb-3 mb-4">
+                        <h3 class="font-display font-black text-base uppercase tracking-wider text-[#161B2F] flex items-center gap-2">
+                            <i data-lucide="paperclip" class="w-4 h-4 text-[#5B687C]"></i> Обмен файлами
+                        </h3>
+                    </div>
+                    <div id="resultFiles" class="space-y-3 mb-5"></div>
+                </div>
+                <div class="space-y-2.5 pt-4 border-t border-[#D4CDCB]">
+                    <div class="инпут-блок overflow-hidden">
+                        <input type="file" id="fileInput" class="custom-file-input w-full text-xs text-[#5A4A44] outline-none cursor-pointer">
+                    </div>
+                    <button id="uploadBtn" class="w-full bg-white border border-[#D4CDCB] hover:bg-[#F7F3ED] text-[#5B687C] text-xs font-bold uppercase tracking-widest py-3.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Загрузить документ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Вспомогательные функции ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} bg-white shadow-lg rounded-xl p-4 flex items-center gap-3 border-l-4 ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-blue-500'}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5 ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i><span class="text-sm text-[#161B2F]">${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                if (modalId === 'profileViewModal') modal.style.display = 'none';
+            }
+        }
+
+        function setupModalClose(modalId, closeBtnSelector = '.close-modal-btn') {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal(modalId);
+            });
+            const closeBtn = modal.querySelector(closeBtnSelector);
+            if (closeBtn) closeBtn.addEventListener('click', () => closeModal(modalId));
+        }
+
+        function askCustomConfirm(text, onConfirm) {
+            const modal = document.getElementById('customConfirmModal');
+            document.getElementById('confirmModalText').innerText = text;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const successBtn = document.getElementById('confirmSuccessBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+            const cleanup = () => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                successBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+            successBtn.onclick = () => { onConfirm(); cleanup(); };
+            cancelBtn.onclick = cleanup;
+        }
+
+        function askCustomPrompt(onConfirm) {
+            const modal = document.getElementById('customPromptModal');
+            const input = document.getElementById('promptModalInput');
+            const btn = document.getElementById('promptSuccessBtn');
+            const counter = document.getElementById('promptCharCount');
+            input.value = '';
+            counter.innerText = 'Символов: 0 / мин. 10';
+            btn.disabled = true;
+            btn.className = "px-5 py-2.5 rounded-xl bg-[#DBA1A2]/20 border border-[#DBA1A2]/30 text-[#DBA1A2] font-black text-xs uppercase tracking-wider transition-all opacity-50 cursor-not-allowed";
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const onInput = () => {
+                const len = input.value.trim().length;
+                counter.innerText = `Символов: ${len} / мин. 10`;
+                if(len >= 10) {
+                    btn.disabled = false;
+                    btn.className = "px-5 py-2.5 rounded-xl bg-[#DBA1A2] text-white font-black text-xs uppercase tracking-wider hover:bg-[#C08A8B] transition-all shadow-md cursor-pointer";
+                } else {
+                    btn.disabled = true;
+                    btn.className = "px-5 py-2.5 rounded-xl bg-[#DBA1A2]/20 border border-[#DBA1A2]/30 text-[#DBA1A2] font-black text-xs uppercase tracking-wider transition-all opacity-50 cursor-not-allowed";
+                }
+            };
+            input.addEventListener('input', onInput);
+            const cleanup = () => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                btn.onclick = null;
+                document.getElementById('promptCancelBtn').onclick = null;
+                input.removeEventListener('input', onInput);
+            };
+            btn.onclick = () => { onConfirm(input.value.trim()); cleanup(); };
+            document.getElementById('promptCancelBtn').onclick = cleanup;
+        }
+
+        setupModalClose('customConfirmModal', '.close-modal-btn');
+        setupModalClose('customPromptModal', '.close-modal-btn');
+        setupModalClose('profileViewModal', '#closeProfileViewModal');
+
+        async function downloadFile(url, fileName) {
+            try {
+                const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Ошибка загрузки файла');
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                const objectUrl = URL.createObjectURL(blob);
+                link.href = objectUrl;
+                link.download = fileName || url.split('/').pop();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(objectUrl);
+                showToast('Файл сохранён в загрузках', 'success');
+            } catch (err) {
+                showToast('Ошибка скачивания файла', 'error');
+                console.error(err);
+            }
+        }
+
+        lucide.createIcons();
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+        
+        if (!token) window.location.href = 'login.html';
+        
+        // Установка правильной ссылки для кнопки "Кабинет"
+        const cabinetLink = document.getElementById('cabinetLink');
+        if (cabinetLink) {
+            cabinetLink.href = user.role === 'Customer' ? 'customer-dashboard.html' : 'freelancer-dashboard.html';
+        }
+        
+        authBlock.innerHTML = `
+            <div class="hidden sm:flex flex-col text-right">
+                <span class="text-[#8D8F8E] text-[9px] uppercase tracking-wider font-bold">Вы вошли как</span>
+                <span class="text-[#161B2F] text-xs font-semibold">${escapeHtml(user.fullName)}</span>
+            </div>
+            <button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] p-1.5 transition-colors"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        `;
+        lucide.createIcons();
+        document.getElementById('logoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id');
+        if (!orderId) { showToast('Не указан ID заказа', 'error'); window.location.href = 'catalog.html'; }
+
+        let connection = null;
+        let orderData = null;
+        let disputeData = null;
+        let refreshInterval = null;
+
+        // Функция перевода статуса на русский
+        function translateStatus(status) {
+            const map = {
+                'Open': 'Открыт',
+                'InProgress': 'В работе',
+                'Completed': 'Завершён',
+                'PendingModeration': 'На модерации'
+            };
+            return map[status] || status;
+        }
+
+        async function showUserProfile(userId) {
+            const modal = document.getElementById('profileViewModal');
+            if (!modal) return;
+            try {
+                const res = await fetch(`/api/Users/${userId}/public`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                document.getElementById('modalUserName').innerText = data.fullName;
+                document.getElementById('modalUserRole').innerText = data.role === 'Freelancer' ? 'Фрилансер' : 'Заказчик';
+                document.getElementById('modalRating').innerText = data.averageRating;
+                document.getElementById('modalReviewsCount').innerText = `(${data.totalReviews} отзывов)`;
+                if (data.avatarUrl) {
+                    const img = document.getElementById('modalAvatar');
+                    img.src = data.avatarUrl;
+                    img.classList.remove('hidden');
+                    document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.add('hidden');
+                } else {
+                    document.getElementById('modalAvatar').classList.add('hidden');
+                    document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.remove('hidden');
+                }
+                const freelancerDetails = document.getElementById('freelancerDetails');
+                const portfolioSection = document.getElementById('portfolioSection');
+                if (data.role === 'Freelancer') {
+                    freelancerDetails.classList.remove('hidden');
+                    portfolioSection.classList.remove('hidden');
+                    document.getElementById('modalHourlyRate').innerText = data.hourlyRate ? `${data.hourlyRate} BYN` : 'Не указана';
+                    const skillsContainer = document.getElementById('modalSkills');
+                    const skillsList = data.skills ? data.skills.split(',').map(s => s.trim()) : [];
+                    skillsContainer.innerHTML = skillsList.length ? skillsList.map(s => `<span class="bg-[#D4CDCB] px-2 py-0.5 rounded text-xs text-[#161B2F]">${escapeHtml(s)}</span>`).join('') : '<span class="text-[#5A4A44] text-xs">Не указаны</span>';
+                    document.getElementById('modalBio').innerText = data.bio || 'Нет описания';
+                    const portfolioContainer = document.getElementById('modalPortfolio');
+                    portfolioContainer.innerHTML = data.portfolio?.length ? data.portfolio.map(p => `<div class="bg-[#FCF9F7] p-3 rounded-xl border border-[#D4CDCB]"><div class="font-bold text-sm text-[#161B2F]">${escapeHtml(p.title)}</div><div class="text-xs text-[#5A4A44] mt-1">${escapeHtml(p.description)}</div>${p.link ? `<a href="${p.link}" target="_blank" class="text-[#5B687C] text-xs mt-2 inline-block">🔗 Смотреть проект</a>` : ''}</div>`).join('') : '<div class="text-[#5A4A44] text-sm">Нет работ в портфолио</div>';
+                } else {
+                    freelancerDetails.classList.add('hidden');
+                    portfolioSection.classList.add('hidden');
+                }
+                const reviewsContainer = document.getElementById('modalReviews');
+                if (data.reviews?.length) {
+                    reviewsContainer.innerHTML = data.reviews.map(r => `<div class="bg-[#FCF9F7] p-3 rounded-xl"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><div class="flex gap-0.5">${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-3 h-3 ${i < r.rating ? 'text-yellow-500 fill-yellow-500' : 'text-[#8D8F8E]'}"></i>`).join('')}</div><span class="text-xs font-bold text-[#5A4A44]">${escapeHtml(r.authorName)}</span></div><span class="text-[10px] text-[#5A4A44]">${new Date(r.createdAt).toLocaleDateString()}</span></div><p class="text-sm mt-2 text-[#5A4A44]">${escapeHtml(r.comment)}</p></div>`).join('');
+                } else {
+                    reviewsContainer.innerHTML = '<div class="text-[#5A4A44] text-sm">Нет отзывов</div>';
+                }
+                lucide.createIcons();
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            } catch(e) {
+                console.error(e);
+                showToast('Не удалось загрузить профиль пользователя', 'error');
+            }
+        }
+
+        async function loadOrder() {
+            try {
+                const res = await fetch(`/api/Orders/${orderId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    orderData = await res.json();
+                    document.getElementById('title').innerText = orderData.title;
+                    document.getElementById('description').innerText = orderData.description;
+                    document.getElementById('budget').innerHTML = `💰 ${orderData.budget} BYN`;
+                    document.getElementById('deadline').innerHTML = `📅 Срок до: ${new Date(orderData.deadline).toLocaleDateString()}`;
+                    // Отображаем статус на русском
+                    document.getElementById('status').innerHTML = `Статус: ${translateStatus(orderData.status)}`;
+
+                    const filesDiv = document.getElementById('resultFiles');
+                    filesDiv.innerHTML = `
+                        <div class="bg-[#FCF9F7] border border-[#D4CDCB] p-3.5 rounded-xl flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-[10px] uppercase font-bold text-[#5A4A44] tracking-wider mb-0.5">Вложения заказчика</div>
+                                ${orderData.customerFileUrl ? `<span class="text-xs text-[#5B687C] font-medium block truncate">Исходные файлы проекта</span>` : '<span class="text-xs text-[#8D8F8E] block">Файлы не прикреплены</span>'}
+                            </div>
+                            ${orderData.customerFileUrl ? `<button class="download-file-btn p-2 bg-[#D4CDCB] hover:bg-[#5B687C] text-[#5B687C] hover:text-white rounded-lg transition-colors shrink-0" data-url="${orderData.customerFileUrl}" data-filename="customer_file_${orderData.id}"><i data-lucide="download" class="w-4 h-4"></i></button>` : ''}
+                        </div>
+                        <div class="bg-[#FCF9F7] border border-[#D4CDCB] p-3.5 rounded-xl flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-[10px] uppercase font-bold text-[#5A4A44] tracking-wider mb-0.5">Итоговая работа фрилансера</div>
+                                ${orderData.freelancerFileUrl ? `<span class="text-xs text-green-600 font-medium block truncate">Финальный результат решения</span>` : '<span class="text-xs text-[#8D8F8E] block">Ожидание загрузки...</span>'}
+                            </div>
+                            ${orderData.freelancerFileUrl ? `<button class="download-file-btn p-2 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition-colors shrink-0" data-url="${orderData.freelancerFileUrl}" data-filename="freelancer_result_${orderData.id}"><i data-lucide="download" class="w-4 h-4"></i></button>` : ''}
+                        </div>
+                    `;
+                    lucide.createIcons();
+
+                    document.querySelectorAll('.download-file-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const url = btn.dataset.url;
+                            const filename = btn.dataset.filename;
+                            downloadFile(url, filename);
+                        });
+                    });
+
+                    const partnerDiv = document.getElementById('partnerProfileBtn');
+                    partnerDiv.innerHTML = '';
+                    if (user.role === 'Customer' && orderData.freelancerId) {
+                        partnerDiv.innerHTML = `<button id="viewFreelancerProfileBtn" class="text-xs text-[#5B687C] hover:underline flex items-center gap-1"><i data-lucide="user"></i> Профиль фрилансера</button>`;
+                        document.getElementById('viewFreelancerProfileBtn')?.addEventListener('click', () => showUserProfile(orderData.freelancerId));
+                    } else if (user.role === 'Freelancer' && orderData.customerId) {
+                        partnerDiv.innerHTML = `<button id="viewCustomerProfileBtn" class="text-xs text-[#5B687C] hover:underline flex items-center gap-1"><i data-lucide="user"></i> Профиль заказчика</button>`;
+                        document.getElementById('viewCustomerProfileBtn')?.addEventListener('click', () => showUserProfile(orderData.customerId));
+                    }
+
+                    const buttonsDiv = document.getElementById('actionButtons');
+                    buttonsDiv.innerHTML = '';
+                    if (user.role === 'Customer' && orderData.status === 'InProgress') {
+                        buttonsDiv.innerHTML = `
+                            <button id="completeBtn" class="flex-1 md:flex-initial bg-green-500 text-white font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl hover:bg-green-600 transition-all shadow-md">Завершить</button>
+                            <button id="disputeBtn" class="flex-1 md:flex-initial bg-[#DBA1A2]/10 text-[#DBA1A2] border border-[#DBA1A2]/20 font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl hover:bg-[#DBA1A2]/20 transition-all">Открыть диспут</button>
+                        `;
+                        document.getElementById('completeBtn')?.addEventListener('click', completeOrder);
+                        document.getElementById('disputeBtn')?.addEventListener('click', createDispute);
+                    } else if (user.role === 'Freelancer' && orderData.status === 'InProgress') {
+                        buttonsDiv.innerHTML = `
+                            <button id="requestPaymentBtn" class="flex-1 md:flex-initial bg-[#5B687C] text-white font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl hover:bg-[#3A4454] transition-all shadow-md">Запросить оплату</button>
+                            <button id="disputeBtn" class="flex-1 md:flex-initial bg-[#DBA1A2]/10 text-[#DBA1A2] border border-[#DBA1A2]/20 font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl hover:bg-[#DBA1A2]/20 transition-all">Открыть диспут</button>
+                        `;
+                        document.getElementById('requestPaymentBtn')?.addEventListener('click', () => showToast('Запрос на оплату успешно отправлен заказчику!', 'success'));
+                        document.getElementById('disputeBtn')?.addEventListener('click', createDispute);
+                    }
+
+                    if (user.role === 'Moderator') {
+                        const messageInput = document.getElementById('messageInput');
+                        const sendBtn = document.getElementById('sendBtn');
+                        if (messageInput) messageInput.style.display = 'none';
+                        if (sendBtn) sendBtn.style.display = 'none';
+                        const fileInputBlock = document.querySelector('.инпут-блок');
+                        const uploadBtn = document.getElementById('uploadBtn');
+                        if (fileInputBlock) fileInputBlock.style.display = 'none';
+                        if (uploadBtn) uploadBtn.style.display = 'none';
+                        buttonsDiv.innerHTML = '';
+                    }
+
+                    await checkDispute();
+                } else { showToast('Заказ не найден', 'error'); window.location.href = 'catalog.html'; }
+            } catch(e) { showToast('Ошибка загрузки данных', 'error'); }
+        }
+
+        function completeOrder() {
+            askCustomConfirm('Вы уверены, что хотите завершить проект? Зарезервированные средства будут мгновенно переведены на баланс исполнителя.', async () => {
+                try {
+                    const res = await fetch(`/api/Orders/${orderId}/complete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                    if (res.ok) { showToast('Проект успешно завершен!', 'success'); setTimeout(() => window.location.reload(), 1000); }
+                    else showToast('Не удалось завершить заказ', 'error');
+                } catch(e) { showToast('Ошибка сети', 'error'); }
+            });
+        }
+
+        function createDispute() {
+            askCustomPrompt(async (reason) => {
+                try {
+                    const res = await fetch('/api/Disputes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ orderId: parseInt(orderId), reason })
+                    });
+                    if (res.ok) {
+                        showToast('Диспут открыт. Арбитр подключится к чату в ближайшее время.', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        const err = await res.text();
+                        showToast(err || 'Ошибка при регистрации диспута', 'error');
+                    }
+                } catch(e) { showToast('Ошибка соединения с сетью', 'error'); }
+            });
+        }
+
+        async function checkDispute() {
+            try {
+                const res = await fetch(`/api/Disputes/order/${orderId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    disputeData = await res.json();
+                    if (disputeData && disputeData.status === 'Open') {
+                        const container = document.getElementById('projectInfo');
+                        const warningDiv = document.createElement('div');
+                        warningDiv.className = 'mt-4 p-4 bg-[#DBA1A2]/10 border border-[#DBA1A2]/20 rounded-xl text-[#DBA1A2] text-xs text-center font-medium flex items-center justify-center gap-2';
+                        warningDiv.innerHTML = '<i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i> Данный проект заморожен. Диспут открыт. Ожидайте вердикта независимого модератора платформы.';
+                        container.appendChild(warningDiv);
+                        lucide.createIcons();
+                        document.getElementById('completeBtn')?.setAttribute('disabled', 'disabled');
+                        document.getElementById('completeBtn')?.classList.add('opacity-40', 'cursor-not-allowed');
+                        document.getElementById('requestPaymentBtn')?.setAttribute('disabled', 'disabled');
+                        document.getElementById('requestPaymentBtn')?.classList.add('opacity-40', 'cursor-not-allowed');
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) { showToast('Пожалуйста, сначала выберите файл на вашем устройстве', 'error'); return; }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            let endpoint = user.role === 'Customer' ? `/api/Orders/${orderId}/upload-customer` : `/api/Orders/${orderId}/upload-freelancer`;
+            try {
+                const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+                if (res.ok) {
+                    showToast('Файл успешно загружен в облако проекта!', 'success');
+                    await loadOrder();
+                    fileInput.value = '';
+                } else showToast('Сервер отклонил загрузку файла', 'error');
+            } catch(e) { showToast('Критическая ошибка сети при загрузке', 'error'); }
+        });
+
+        async function loadHistory() {
+            try {
+                const res = await fetch(`/api/Orders/${orderId}/messages`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const messages = await res.json();
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = '';
+                    messages.forEach(msg => {
+                        const isOwn = msg.senderId === user.id;
+                        const senderNameDisplay = isOwn ? 'Вы' : (msg.senderName || (msg.senderId === orderData?.customerId ? orderData?.customerName : orderData?.freelancerName) || 'Собеседник');
+                        const div = document.createElement('div');
+                        div.className = `p-3 rounded-xl mb-1 ${isOwn ? 'bg-[#5B687C]/10 ml-auto max-w-[75%] border border-[#5B687C]/20 shadow-sm text-right rounded-br-none' : 'bg-[#FCF9F7] border border-[#D4CDCB] mr-auto max-w-[75%] rounded-bl-none'}`;
+                        div.innerHTML = `
+                            <div class="text-[10px] uppercase tracking-wider font-black text-[#5A4A44]/70 mb-0.5">${escapeHtml(senderNameDisplay)}</div>
+                            <div class="break-words font-normal text-[#161B2F] leading-normal text-left">${escapeHtml(msg.message)}</div>
+                            <div class="text-[9px] text-[#5A4A44]/50 mt-1">${new Date(msg.sentAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        `;
+                        container.appendChild(div);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function initChat() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl('/chatHub', { accessTokenFactory: () => token })
+                .build();
+            connection.on('ReceiveMessage', (userId, userName, message, time) => {
+                const isOwn = parseInt(userId) === user.id;
+                const displayName = isOwn ? 'Вы' : (userName || 'Собеседник');
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl mb-1 ${isOwn ? 'bg-[#5B687C]/10 ml-auto max-w-[75%] border border-[#5B687C]/20 shadow-sm text-right rounded-br-none' : 'bg-[#FCF9F7] border border-[#D4CDCB] mr-auto max-w-[75%] rounded-bl-none'}`;
+                div.innerHTML = `
+                    <div class="text-[10px] uppercase tracking-wider font-black text-[#5A4A44]/70 mb-0.5">${displayName}</div>
+                    <div class="break-words font-normal text-[#161B2F] leading-normal text-left">${escapeHtml(message)}</div>
+                    <div class="text-[9px] text-[#5A4A44]/50 mt-1">${new Date(time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                `;
+                document.getElementById('chatMessages').appendChild(div);
+                document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                loadOrder(); // обновляем файлы при получении сообщения
+            });
+            try {
+                await connection.start();
+                await connection.invoke('JoinOrderGroup', parseInt(orderId));
+                await loadHistory();
+            } catch(err) { console.error(err); }
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const input = document.getElementById('messageInput');
+            const msg = input.value.trim();
+            if (msg && connection) {
+                await connection.invoke('SendMessage', parseInt(orderId), msg);
+                input.value = '';
+            }
+        });
+        document.getElementById('messageInput').addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        });
+
+        function escapeHtml(str) { 
+            if(!str) return '';
+            return str.replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); 
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (orderData && orderData.status === 'InProgress') {
+                    loadOrder();
+                }
+            }, 15000);
+        }
+
+        loadOrder().then(() => {
+            startAutoRefresh();
+            if (orderData) initChat();
+            else setTimeout(() => initChat(), 500);
+        });
+    </script>
+</body>
+</html>

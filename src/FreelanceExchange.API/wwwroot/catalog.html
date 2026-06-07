@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Каталог | FreelanceExchange</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Geologica', 'sans-serif'],
+                    },
+                    colors: {
+                        бг: '#F7F3ED',
+                        основной: '#161B2F',
+                        втор: '#17181F',
+                        акцент: '#5B687C',
+                        мягкий: '#8D8F8E',
+                        светлый: '#D4CDCB',
+                        карта: '#FFFFFF',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                        'shimmer': 'shimmer 2s infinite'
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(16px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        shimmer: {
+                            '100%': { transform: 'translateX(100%)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3ED;
+            color: #161B2F;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .световой-узел {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(91,104,124,0.08) 0%, rgba(247,243,237,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .премиум-карта {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .премиум-карта:hover {
+            border-color: #D4CDCB;
+            box-shadow: 0 20px 30px -12px rgba(22,27,47,0.1);
+            transform: translateY(-2px);
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #161B2F !important;
+            -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+            background-color: white !important;
+        }
+        .инпут-блок {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #D4CDCB;
+            border-radius: 0.75rem;
+            transition: all 0.25s;
+        }
+        .инпут-блок:focus-within {
+            border-color: #5B687C;
+            box-shadow: 0 0 0 3px rgba(91,104,124,0.15);
+        }
+        .селект-стиль {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238D8F8E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+        .селект-стиль option {
+            background-color: #FFFFFF;
+            color: #161B2F;
+        }
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 0.5rem;
+        }
+        .skeleton::after {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 100%);
+            animation: shimmer 2s infinite;
+            content: '';
+        }
+        .custom-scroll {
+            scrollbar-width: thin;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #F7F3ED; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #D4CDCB; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #5B687C; }
+        .catalog-tab-btn {
+            transition: all 0.2s;
+        }
+        .catalog-tab-btn.active {
+            background-color: rgba(91,104,124,0.1);
+            border-color: #5B687C;
+            color: #161B2F;
+        }
+        .field-error {
+            font-size: 0.7rem;
+            color: #DBA1A2;
+            margin-top: 0.25rem;
+            margin-left: 0.25rem;
+        }
+        .error-field {
+            border-color: #DBA1A2 !important;
+            background-color: rgba(219,161,162,0.05) !important;
+        }
+        @media (max-width: 768px) {
+            .световой-узел { width: 300px; height: 300px; }
+            .премиум-карта { padding: 1rem !important; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            .grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 { gap: 1rem; }
+            .response-btn { width: 100%; }
+        }
+        @media (max-width: 640px) {
+            .bg-темныйБлок\/40 .flex { flex-direction: column; }
+            .tab-btn { flex: 1 1 auto; justify-content: center; }
+            .catalog-tab-btn { padding: 0.5rem 1rem; font-size: 0.7rem; }
+            .фильтры-сетка { grid-template-columns: 1fr !important; }
+        }
+    </style>
+</head>
+<body class="relative antialiased min-h-screen">
+
+    <!-- декоративные световые узлы -->
+    <div class="световой-узел top-[-5%] left-[-15%] animate-pulse-slow"></div>
+    <div class="световой-узел top-[50%] right-[-15%] animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+
+    <!-- ШАПКА (единая, светлая) -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-[#D4CDCB] shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center flex-wrap gap-3">
+            <a href="index.html" class="font-display text-xl tracking-wider font-black text-[#161B2F] flex items-center gap-2">
+                <span class="w-2 h-2 bg-[#5B687C] shadow-sm rounded-full"></span>
+                FreelanceExchange
+            </a>
+            <nav class="hidden md:flex space-x-8">
+                <a href="index.html" class="text-xs uppercase tracking-widest font-bold text-[#161B2F] hover:text-[#5B687C] transition-colors">Главная</a>
+                <a href="catalog.html" class="text-xs uppercase tracking-widest font-bold text-[#5B687C] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:bg-[#5B687C]">Каталог</a>
+            </nav>
+            <div id="authBlock" class="text-xs uppercase tracking-widest font-bold flex items-center space-x-4">
+                <!-- динамическое содержимое -->
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-12 relative z-10 max-w-6xl">
+        <!-- Переключатель между проектами и фрилансерами -->
+        <div class="flex gap-3 mb-8 border-b border-[#D4CDCB] pb-3">
+            <button id="tabProjectsBtn" class="catalog-tab-btn active px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wider bg-white border border-[#D4CDCB] hover:bg-[#EFD8D6] transition-all">📋 Проекты</button>
+            <button id="tabFreelancersBtn" class="catalog-tab-btn px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wider bg-white border border-[#D4CDCB] hover:bg-[#EFD8D6] transition-all">👥 Фрилансеры</button>
+        </div>
+
+        <!-- Блок проектов (с фильтрацией) -->
+        <div id="projectsSection">
+            <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                    <h1 class="font-display text-3xl sm:text-4xl font-black text-[#161B2F] tracking-tight">Актуальные проекты</h1>
+                    <p class="text-[#5A4A44] text-sm mt-2 font-light">Безопасные сделки, оперативные выплаты и прозрачные отклики в экосистеме</p>
+                </div>
+                <div class="text-xs text-[#5A4A44] font-medium bg-white border border-[#D4CDCB] px-4 py-2 rounded-full shadow-sm self-start md:self-auto">
+                    Доступно контрактов: <span id="ordersCount" class="text-[#5B687C] font-bold">...</span>
+                </div>
+            </div>
+
+            <div class="bg-white border border-[#D4CDCB] rounded-2xl p-6 mb-10 shadow-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Категория</label>
+                        <div class="инпут-блок">
+                            <select id="categoryFilter" class="селект-стиль w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none cursor-pointer font-medium"></select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Бюджет (BYN)</label>
+                        <div class="flex gap-2">
+                            <div class="инпут-блок flex-1">
+                                <input type="number" id="minBudget" placeholder="от" class="w-full bg-transparent px-3 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                            </div>
+                            <div class="инпут-блок flex-1">
+                                <input type="number" id="maxBudget" placeholder="до" class="w-full bg-transparent px-3 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Макс. срок</label>
+                        <div class="инпут-блок">
+                            <select id="deadlineFilter" class="селект-стиль w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none cursor-pointer font-medium">
+                                <option value="">Любой срок</option>
+                                <option value="3">До 3 дней</option>
+                                <option value="7">До 7 дней</option>
+                                <option value="14">До 14 дней</option>
+                                <option value="30">До 30 дней</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Поиск</label>
+                        <div class="инпут-блок">
+                            <input type="text" id="searchInput" placeholder="Ключевые слова..." class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-end gap-4 mt-6 pt-5 border-t border-[#D4CDCB]">
+                    <button id="resetFiltersBtn" class="text-xs uppercase tracking-widest font-bold text-[#5A4A44] hover:text-[#161B2F] transition-colors px-3 py-2 rounded-lg hover:bg-[#EFD8D6]">Сбросить</button>
+                    <button id="applyFiltersBtn" class="bg-[#5B687C] text-white text-xs uppercase tracking-widest font-black px-6 py-3 rounded-full hover:bg-[#3A4454] transition-all shadow-md active:scale-[0.98] duration-150">Применить фильтры</button>
+                </div>
+            </div>
+
+            <div id="ordersList" class="space-y-4"></div>
+        </div>
+
+        <!-- Блок фрилансеров (без фильтров) -->
+        <div id="freelancersSection" class="hidden">
+            <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div>
+                    <h1 class="font-display text-3xl sm:text-4xl font-black text-[#161B2F] tracking-tight">Исполнители</h1>
+                    <p class="text-[#5A4A44] text-sm mt-2 font-light">Проверенные фрилансеры, рейтинг, портфолио и отзывы</p>
+                </div>
+                <div class="text-xs text-[#5A4A44] font-medium bg-white border border-[#D4CDCB] px-4 py-2 rounded-full shadow-sm self-start md:self-auto">
+                    Найдено: <span id="freelancersCount" class="text-[#5B687C] font-bold">...</span>
+                </div>
+            </div>
+            <div id="freelancersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </main>
+
+    <!-- ПОДВАЛ (единый) -->
+    <footer class="py-12 border-t border-[#D4CDCB] bg-white/70 mt-12">
+        <div class="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="text-center sm:text-left space-y-1">
+                <p class="font-display text-base tracking-widest font-black text-[#161B2F]">FreelanceExchange</p>
+                <p class="text-xs text-[#5A4A44]">© 2026 Безопасная фриланс-инфраструктура. Все права защищены.</p>
+            </div>
+            <div class="flex space-x-10 text-xs font-bold uppercase tracking-widest">
+                <button onclick="openModal('rulesModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Регламент</button>
+                <button onclick="openModal('supportModal')" class="text-[#5A4A44] hover:text-[#5B687C] transition-colors cursor-pointer">Поддержка</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модалки регламента и поддержки (как на главной) -->
+    <div id="rulesModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-xl p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('rulesModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-4">
+                <span class="text-xs font-mono text-[#5B687C] font-bold uppercase tracking-widest">Безопасность</span>
+                <h3 class="font-display text-2xl font-bold">Правила экосистемы</h3>
+                <div class="text-[#5A4A44] text-sm space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                    <p><strong class="text-[#161B2F]">1. Идентификация.</strong> Все аккаунты проходят автоматическую модерацию. Запрещено дублирование профилей и использование фейковых портфолио.</p>
+                    <p><strong class="text-[#161B2F]">2. Финансовая защита.</strong> Проведение сделок в обход «Сейфа» запрещено политикой безопасности платформы FreelanceExchange.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="supportModal" class="modal-blur fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-sm p-8 text-[#161B2F] relative transform scale-95 transition-transform duration-300 shadow-xl">
+            <button onclick="closeModal('supportModal')" class="absolute top-6 right-6 text-[#5A4A44] hover:text-[#161B2F] transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="space-y-6 text-center">
+                <h3 class="font-display text-xl font-bold">Служба заботы FreelanceExchange</h3>
+                <p class="text-[#5A4A44] text-sm">Решаем вопросы верификации, вывода средств и технических сбоев 24/7.</p>
+                <a href="mailto:help@uzel.by" class="block w-full bg-[#D4CDCB] border border-[#5B687C] py-4 rounded-full text-xs font-bold text-[#161B2F] transition-colors hover:bg-[#5B687C] hover:text-white">help@uzel.by</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка отклика (с кастомной валидацией) -->
+    <div id="responseModal" class="fixed inset-0 z-50 bg-white/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-display text-xl font-black text-[#161B2F] tracking-tight">Отклик на проект</h3>
+                <button id="closeModal" class="text-[#5A4A44] hover:text-[#161B2F] text-2xl transition-colors">&times;</button>
+            </div>
+            <form id="responseForm" class="space-y-5" novalidate>
+                <input type="hidden" id="responseOrderId">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Предлагаемый бюджет (BYN)</label>
+                    <div class="инпут-блок">
+                        <input type="number" id="proposedPrice" required placeholder="Укажите стоимость работы" class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none placeholder:text-[#8D8F8E]/50">
+                    </div>
+                    <div class="field-error hidden" id="error-price"></div>
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Сопроводительное письмо</label>
+                    <div class="инпут-блок">
+                        <textarea id="coverLetter" rows="4" required placeholder="Опишите ваш опыт реализации похожих задач..." class="w-full bg-transparent px-4 py-3 text-sm text-[#161B2F] outline-none resize-none placeholder:text-[#8D8F8E]/50"></textarea>
+                    </div>
+                    <div class="field-error hidden" id="error-letter"></div>
+                </div>
+                <div id="responseError" class="hidden items-center gap-2 bg-[#EFD8D6] border border-[#DBA1A2] rounded-xl p-3 text-[#422B23] text-xs">
+                    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                    <span id="responseErrorText"></span>
+                </div>
+                <button type="submit" class="w-full bg-[#5B687C] text-white font-black text-xs uppercase tracking-widest py-4 rounded-full hover:bg-[#3A4454] transition-all shadow-md active:scale-[0.99] duration-150">Отправить предложение</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка просмотра публичного профиля (светлая) -->
+    <div id="profileViewModal" class="fixed inset-0 z-50 bg-white/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-[#D4CDCB] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col shadow-xl animate-fade-in">
+            <div class="p-6 border-b border-[#D4CDCB] flex justify-between items-center sticky top-0 bg-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-[#D4CDCB] border border-[#5B687C] overflow-hidden flex items-center justify-center">
+                        <img id="modalAvatar" src="" class="w-full h-full object-cover hidden">
+                        <i data-lucide="user" class="w-6 h-6 text-[#5A4A44]"></i>
+                    </div>
+                    <div>
+                        <h3 id="modalUserName" class="font-display font-black text-xl text-[#161B2F]">Имя пользователя</h3>
+                        <div class="flex items-center gap-2 text-xs text-[#5A4A44]">
+                            <span id="modalUserRole">Роль</span>
+                            <span class="text-[#5B687C]">•</span>
+                            <span id="modalRating" class="text-[#5B687C] font-bold">0.0</span>
+                            <span>/ 5</span>
+                            <span id="modalReviewsCount">(0 отзывов)</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="closeProfileViewModal" class="text-[#5A4A44] hover:text-[#161B2F] p-1 rounded-lg transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div id="freelancerDetails" class="hidden">
+                    <div class="flex justify-between items-center">
+                        <div><p class="text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">Ставка в час</p><p id="modalHourlyRate" class="text-2xl font-black text-[#5B687C]">0 BYN</p></div>
+                        <div><span class="text-xs font-bold">Навыки:</span><div id="modalSkills" class="flex flex-wrap gap-1 mt-1"></div></div>
+                    </div>
+                    <div class="mt-3"><p class="text-[10px] uppercase font-bold text-[#5A4A44]">О себе</p><p id="modalBio" class="text-sm text-[#5A4A44] mt-1"></p></div>
+                </div>
+                <div id="portfolioSection" class="hidden"><h4 class="font-bold text-sm uppercase tracking-wider text-[#5A4A44]">Портфолио</h4><div id="modalPortfolio" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2"></div></div>
+                <div><h4 class="font-bold text-sm uppercase tracking-wider text-[#5A4A44]">Отзывы</h4><div id="modalReviews" class="space-y-3 mt-3 max-h-60 overflow-y-auto custom-scroll"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Модальные окна (регламент, поддержка)
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+        document.querySelectorAll('.modal-blur').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) closeModal(this.id);
+            });
+        });
+
+        // Авторизация
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const authBlock = document.getElementById('authBlock');
+
+        if (token && user.role) {
+            authBlock.innerHTML = `<a href="${getDashboardUrl(user.role)}" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Кабинет</a>
+                                   <button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] transition-colors">Выйти</button>`;
+            document.getElementById('logoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.reload(); });
+        } else {
+            authBlock.innerHTML = `<a href="login.html" class="text-[#5A4A44] hover:text-[#161B2F] transition-colors">Вход</a>
+                                   <a href="register.html" class="text-[#5B687C] font-bold hover:underline">Регистрация</a>`;
+        }
+
+        function getDashboardUrl(role) {
+            const routes = { Customer: 'customer-dashboard.html', Freelancer: 'freelancer-dashboard.html', Moderator: 'moderator-dashboard.html', Admin: 'admin-dashboard.html' };
+            return routes[role] || '#';
+        }
+
+        // Переключение вкладок
+        const projectsSection = document.getElementById('projectsSection');
+        const freelancersSection = document.getElementById('freelancersSection');
+        const tabProjectsBtn = document.getElementById('tabProjectsBtn');
+        const tabFreelancersBtn = document.getElementById('tabFreelancersBtn');
+
+        function showProjects() {
+            projectsSection.classList.remove('hidden');
+            freelancersSection.classList.add('hidden');
+            tabProjectsBtn.classList.add('active');
+            tabFreelancersBtn.classList.remove('active');
+            loadOrders();
+        }
+        function showFreelancers() {
+            projectsSection.classList.add('hidden');
+            freelancersSection.classList.remove('hidden');
+            tabFreelancersBtn.classList.add('active');
+            tabProjectsBtn.classList.remove('active');
+            loadFreelancers();
+        }
+        tabProjectsBtn.addEventListener('click', showProjects);
+        tabFreelancersBtn.addEventListener('click', showFreelancers);
+
+        // Проекты
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/Admin/public/categories');
+                if (res.ok) {
+                    const cats = await res.json();
+                    const select = document.getElementById('categoryFilter');
+                    select.innerHTML = '<option value="">Все категории</option>';
+                    cats.forEach(cat => { select.innerHTML += `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`; });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderSkeletons() {
+            const container = document.getElementById('ordersList');
+            container.innerHTML = Array(3).fill(0).map(() => `
+                <div class="премиум-карта rounded-xl p-6 space-y-4 opacity-70">
+                    <div class="flex items-center gap-4"><div class="skeleton h-6 w-1/3"></div><div class="skeleton h-5 w-20 rounded-full"></div></div>
+                    <div class="skeleton h-4 w-full"></div><div class="skeleton h-4 w-2/3"></div>
+                    <div class="flex gap-4 pt-2"><div class="skeleton h-5 w-24"></div><div class="skeleton h-5 w-32"></div></div>
+                </div>
+            `).join('');
+        }
+
+        async function loadOrders() {
+            renderSkeletons();
+            const container = document.getElementById('ordersList');
+            try {
+                const params = new URLSearchParams();
+                const cat = document.getElementById('categoryFilter').value;
+                if (cat) params.append('categoryId', cat);
+                const minB = document.getElementById('minBudget').value;
+                if (minB) params.append('minBudget', minB);
+                const maxB = document.getElementById('maxBudget').value;
+                if (maxB) params.append('maxBudget', maxB);
+                const deadline = document.getElementById('deadlineFilter').value;
+                if (deadline) params.append('deadlineDays', deadline);
+                const search = document.getElementById('searchInput').value.trim();
+                if (search) params.append('search', search);
+                
+                const response = await fetch('/api/Orders' + (params.toString() ? '?' + params.toString() : ''));
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                const orders = data.items || data;
+                document.getElementById('ordersCount').textContent = orders.length;
+                if (!orders.length) {
+                    container.innerHTML = `<div class="премиум-карта p-16 rounded-xl text-center text-[#5A4A44] flex flex-col items-center gap-3"><i data-lucide="folder-search" class="w-10 h-10 text-[#8D8F8E]"></i><span>Нет активных проектов по выбранным критериям</span></div>`;
+                    lucide.createIcons();
+                    return;
+                }
+                container.innerHTML = orders.map((order, index) => `
+                    <div class="премиум-карта rounded-xl p-6 relative overflow-hidden animate-fade-in-up" style="animation-delay: ${index * 0.05}s">
+                        <div class="flex flex-col lg:flex-row justify-between gap-6 items-start lg:items-center">
+                            <div class="flex-1 space-y-3">
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <h3 class="font-display text-lg font-black text-[#161B2F] tracking-tight">${escapeHtml(order.title)}</h3>
+                                    <span class="text-[10px] uppercase font-bold bg-[#D4CDCB] px-3 py-1 rounded-full text-[#5A4A44]">${escapeHtml(order.categoryName)}</span>
+                                </div>
+                                <p class="text-[#5A4A44] text-sm leading-relaxed">${escapeHtml(order.description)}</p>
+                                <div class="flex flex-wrap gap-4 pt-2 text-xs text-[#5A4A44]">
+                                    <span class="text-[#5B687C] font-bold inline-flex items-center gap-2"><i data-lucide="wallet" class="w-3.5 h-3.5"></i> ${order.budget} BYN</span>
+                                    <span class="inline-flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Срок: ${new Date(order.deadline).toLocaleDateString()}</span>
+                                    <span class="inline-flex items-center gap-2"><i data-lucide="user" class="w-3.5 h-3.5"></i> Заказчик: <button class="view-customer-profile text-[#5B687C] hover:underline font-bold" data-user-id="${order.customerId}">${escapeHtml(order.customerName)}</button></span>
+                                </div>
+                            </div>
+                            ${token && user.role === 'Freelancer' ? `<div class="shrink-0"><button class="response-btn bg-[#5B687C] text-white px-6 py-3 rounded-full text-xs font-black hover:bg-[#3A4454] transition-all shadow-md active:scale-[0.97]" data-id="${order.id}">Откликнуться</button></div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+                document.querySelectorAll('.response-btn').forEach(btn => btn.addEventListener('click', () => {
+                    document.getElementById('responseOrderId').value = btn.dataset.id;
+                    document.getElementById('responseModal').classList.remove('hidden');
+                    document.getElementById('responseModal').style.display = 'flex';
+                }));
+                document.querySelectorAll('.view-customer-profile').forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); if (btn.dataset.userId) showUserProfile(btn.dataset.userId); }));
+            } catch (err) {
+                container.innerHTML = `<div class="премиум-карта p-12 rounded-xl text-center text-[#DBA1A2] border border-[#DBA1A2]/20 flex items-center justify-center gap-2"><i data-lucide="alert-octagon" class="w-5 h-5"></i> Ошибка загрузки проектов</div>`;
+                lucide.createIcons();
+            }
+        }
+
+        // Фрилансеры
+        async function loadFreelancers() {
+            const container = document.getElementById('freelancersList');
+            container.innerHTML = '<div class="col-span-3 text-center py-12 text-[#5A4A44]">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/Users/freelancers');
+                if (!res.ok) throw new Error();
+                let freelancers = await res.json();
+                document.getElementById('freelancersCount').innerText = freelancers.length;
+                if (!freelancers.length) {
+                    container.innerHTML = '<div class="col-span-3 text-center py-12 text-[#5A4A44]">Фрилансеров пока нет</div>';
+                    return;
+                }
+                container.innerHTML = freelancers.map(f => `
+                    <div class="премиум-карта rounded-2xl p-5 transition-all hover:scale-[1.02] duration-300">
+                        <div class="flex gap-4">
+                            <div class="w-16 h-16 rounded-full bg-[#D4CDCB] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                ${f.avatarUrl ? `<img src="${f.avatarUrl}" class="w-full h-full object-cover">` : `<i data-lucide="user" class="w-8 h-8 text-[#5A4A44]"></i>`}
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start flex-wrap gap-1">
+                                    <h3 class="font-display font-black text-xl text-[#161B2F]">${escapeHtml(f.fullName)}</h3>
+                                    <div class="flex items-center gap-1 text-yellow-500">
+                                        ${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-4 h-4 ${i < Math.floor(f.averageRating || 0) ? 'fill-yellow-500' : ''}"></i>`).join('')}
+                                        <span class="text-xs text-[#5A4A44] ml-1">${(f.averageRating || 0).toFixed(1)}</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-[#5A4A44] mt-1 line-clamp-2">${escapeHtml(f.bio || 'Нет описания')}</p>
+                                <div class="flex justify-between items-center mt-3 gap-2">
+                                    <span class="text-[#5B687C] font-bold text-sm">${f.hourlyRate ? `${f.hourlyRate} BYN/час` : 'Ставка не указана'}</span>
+                                    <button class="view-freelancer-profile-btn bg-white border border-[#D4CDCB] px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[#EFD8D6] transition-all" data-user-id="${f.id}">Подробнее</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+                document.querySelectorAll('.view-freelancer-profile-btn').forEach(btn => btn.addEventListener('click', () => showUserProfile(btn.dataset.userId)));
+            } catch(e) {
+                container.innerHTML = '<div class="col-span-3 text-center py-12 text-[#DBA1A2]">Ошибка загрузки фрилансеров</div>';
+            }
+        }
+
+        // Общий просмотр профиля
+        async function showUserProfile(userId) {
+            const modal = document.getElementById('profileViewModal');
+            if (!modal) return;
+            try {
+                const res = await fetch(`/api/Users/${userId}/public`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                document.getElementById('modalUserName').innerText = data.fullName;
+                document.getElementById('modalUserRole').innerText = data.role === 'Freelancer' ? 'Фрилансер' : 'Заказчик';
+                document.getElementById('modalRating').innerText = data.averageRating;
+                document.getElementById('modalReviewsCount').innerText = `(${data.totalReviews} отзывов)`;
+                if (data.avatarUrl) {
+                    const img = document.getElementById('modalAvatar');
+                    img.src = data.avatarUrl;
+                    img.classList.remove('hidden');
+                    document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.add('hidden');
+                } else {
+                    document.getElementById('modalAvatar').classList.add('hidden');
+                    document.querySelector('#profileViewModal i[data-lucide="user"]')?.classList.remove('hidden');
+                }
+                const freelancerDetails = document.getElementById('freelancerDetails');
+                const portfolioSection = document.getElementById('portfolioSection');
+                if (data.role === 'Freelancer') {
+                    freelancerDetails.classList.remove('hidden');
+                    portfolioSection.classList.remove('hidden');
+                    document.getElementById('modalHourlyRate').innerText = data.hourlyRate ? `${data.hourlyRate} BYN` : 'Не указана';
+                    const skillsContainer = document.getElementById('modalSkills');
+                    const skillsList = data.skills ? data.skills.split(',').map(s => s.trim()) : [];
+                    skillsContainer.innerHTML = skillsList.length ? skillsList.map(s => `<span class="bg-[#D4CDCB] px-2 py-0.5 rounded text-xs text-[#161B2F]">${escapeHtml(s)}</span>`).join('') : '<span class="text-[#5A4A44] text-xs">Не указаны</span>';
+                    document.getElementById('modalBio').innerText = data.bio || 'Нет описания';
+                    const portfolioContainer = document.getElementById('modalPortfolio');
+                    portfolioContainer.innerHTML = data.portfolio?.length ? data.portfolio.map(p => `<div class="bg-[#F7F3ED] p-3 rounded-xl border border-[#D4CDCB]"><div class="font-bold text-sm text-[#161B2F]">${escapeHtml(p.title)}</div><div class="text-xs text-[#5A4A44] mt-1">${escapeHtml(p.description)}</div>${p.link ? `<a href="${p.link}" target="_blank" class="text-[#5B687C] text-xs mt-2 inline-block">🔗 Смотреть проект</a>` : ''}</div>`).join('') : '<div class="text-[#5A4A44] text-sm">Нет работ в портфолио</div>';
+                } else {
+                    freelancerDetails.classList.add('hidden');
+                    portfolioSection.classList.add('hidden');
+                }
+                const reviewsContainer = document.getElementById('modalReviews');
+                if (data.reviews?.length) {
+                    reviewsContainer.innerHTML = data.reviews.map(r => `<div class="bg-[#F7F3ED] p-3 rounded-xl"><div class="flex justify-between items-start"><div class="flex items-center gap-2"><div class="flex gap-0.5">${Array(5).fill(0).map((_, i) => `<i data-lucide="star" class="w-3 h-3 ${i < r.rating ? 'text-yellow-500 fill-yellow-500' : 'text-[#8D8F8E]'}"></i>`).join('')}</div><span class="text-xs font-bold text-[#5A4A44]">${escapeHtml(r.authorName)}</span></div><span class="text-[10px] text-[#8D8F8E]">${new Date(r.createdAt).toLocaleDateString()}</span></div><p class="text-sm mt-2 text-[#5A4A44]">${escapeHtml(r.comment)}</p></div>`).join('');
+                } else {
+                    reviewsContainer.innerHTML = '<div class="text-[#5A4A44] text-sm">Нет отзывов</div>';
+                }
+                lucide.createIcons();
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            } catch(e) { console.error(e); alert('Не удалось загрузить профиль'); }
+        }
+        document.getElementById('closeProfileViewModal')?.addEventListener('click', () => {
+            const modal = document.getElementById('profileViewModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        });
+        window.onclick = (e) => {
+            const profileModal = document.getElementById('profileViewModal');
+            if (e.target === profileModal) profileModal.classList.add('hidden');
+        };
+
+        // Фильтры и отправка отклика (с валидацией)
+        document.getElementById('applyFiltersBtn').addEventListener('click', loadOrders);
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+            ['categoryFilter', 'minBudget', 'maxBudget', 'deadlineFilter', 'searchInput'].forEach(id => document.getElementById(id).value = '');
+            loadOrders();
+        });
+
+        function clearResponseErrors() {
+            document.querySelectorAll('#responseForm .field-error').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('#responseForm .инпут-блок').forEach(el => el.classList.remove('error-field'));
+            document.getElementById('responseError').classList.add('hidden');
+        }
+        function showResponseFieldError(fieldId, msg) {
+            const errDiv = document.getElementById(`error-${fieldId}`);
+            if (errDiv) {
+                errDiv.textContent = msg;
+                errDiv.classList.remove('hidden');
+            }
+            const input = document.getElementById(fieldId);
+            if (input) input.closest('.инпут-блок').classList.add('error-field');
+        }
+
+        const responseForm = document.getElementById('responseForm');
+        responseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearResponseErrors();
+            const orderId = document.getElementById('responseOrderId').value;
+            const proposedPrice = parseFloat(document.getElementById('proposedPrice').value);
+            const coverLetter = document.getElementById('coverLetter').value.trim();
+            let valid = true;
+            if (isNaN(proposedPrice) || proposedPrice <= 0) {
+                showResponseFieldError('price', 'Укажите положительную сумму');
+                valid = false;
+            }
+            if (!coverLetter) {
+                showResponseFieldError('letter', 'Напишите сопроводительное письмо');
+                valid = false;
+            }
+            if (!valid) return;
+            try {
+                const res = await fetch('/api/Responses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ orderId, proposedPrice, coverLetter })
+                });
+                if (res.ok) {
+                    alert('Отклик успешно отправлен!');
+                    document.getElementById('responseModal').classList.add('hidden');
+                    responseForm.reset();
+                } else {
+                    const err = await res.text();
+                    const errDiv = document.getElementById('responseError');
+                    document.getElementById('responseErrorText').innerText = err || 'Ошибка сервера';
+                    errDiv.classList.remove('hidden');
+                }
+            } catch {
+                const errDiv = document.getElementById('responseError');
+                document.getElementById('responseErrorText').innerText = 'Ошибка сети';
+                errDiv.classList.remove('hidden');
+            }
+        });
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('responseModal').classList.add('hidden');
+            responseForm.reset();
+            clearResponseErrors();
+        });
+        window.onclick = (e) => {
+            if (e.target === document.getElementById('responseModal')) {
+                document.getElementById('responseModal').classList.add('hidden');
+                responseForm.reset();
+                clearResponseErrors();
+            }
+        };
+
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+
+        loadCategories();
+        showProjects(); // по умолчанию проекты
+    </script>
+</body>
+</html>
