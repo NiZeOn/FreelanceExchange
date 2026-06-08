@@ -36,7 +36,14 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             return BadRequest("Пользователь с таким email уже существует");
 
-        int roleId = dto.Role == "Freelancer" ? 3 : 2;
+        // ИСПРАВЛЕНО: По умолчанию ставим роль Фрилансера (Id = 2)
+        int roleId = 2; 
+
+        // Проверяем выбор пользователя на форме (учитываем и английский, и русский текст)
+        if (dto.Role == "Customer" || dto.Role == "Заказчик")
+        {
+            roleId = 3; // Устанавливаем роль Заказчика (Id = 3)
+        }
 
         var user = new User
         {
