@@ -28,7 +28,8 @@ public class ResponsesController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.RoleId != 3)
+        // ИСПРАВЛЕНО: Изменено RoleId != 3 на != 2 (роль фрилансера в системе)
+        if (user == null || user.RoleId != 2)
             return Forbid("Только фрилансеры могут откликаться на заказы");
 
         var order = await _context.Orders.FindAsync(dto.OrderId);
@@ -71,7 +72,8 @@ public class ResponsesController : ControllerBase
         if (order == null)
             return NotFound("Заказ не найден");
 
-        if (order.CustomerId != userId && user.RoleId != 5)
+        // ИСПРАВЛЕНО: Добавлена проверка на RoleId == 1 (Админ Artyom), чтобы он тоже мог смотреть
+        if (order.CustomerId != userId && user.RoleId != 5 && user.RoleId != 1)
             return Forbid("У вас нет прав просматривать отклики на этот заказ");
 
         var responses = await _context.Responses
@@ -85,8 +87,8 @@ public class ResponsesController : ControllerBase
                 CreatedAt = r.CreatedAt,
                 Status = r.Status,
                 FreelancerId = r.FreelancerId,
-                FreelancerName = r.Freelancer.FullName,
-                FreelancerAvatarUrl = r.Freelancer.AvatarUrl,
+                FreelancerName = r.Freelancer != null ? r.Freelancer.FullName : "Неизвестный исполнитель",
+                FreelancerAvatarUrl = r.Freelancer != null ? r.Freelancer.AvatarUrl : null,
                 OrderId = r.OrderId,
                 OrderTitle = order.Title
             }).ToListAsync();
@@ -99,7 +101,8 @@ public class ResponsesController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.RoleId != 3)
+        // ИСПРАВЛЕНО: Изменено RoleId != 3 на != 2 в соответствии с вашей базой данных
+        if (user == null || user.RoleId != 2)
             return Forbid("Только фрилансеры могут просматривать свои отклики");
 
         var responses = await _context.Responses
@@ -116,7 +119,8 @@ public class ResponsesController : ControllerBase
                 FreelancerName = user.FullName,
                 FreelancerAvatarUrl = user.AvatarUrl,
                 OrderId = r.OrderId,
-                OrderTitle = r.Order.Title
+                // ИСПРАВЛЕНО: Защита от NullReferenceException
+                OrderTitle = r.Order != null ? r.Order.Title : "Заказ удален или недоступен"
             }).ToListAsync();
 
         return Ok(responses);
@@ -134,6 +138,10 @@ public class ResponsesController : ControllerBase
             return NotFound("Отклик не найден");
 
         var order = response.Order;
+        // ИСПРАВЛЕНО: Защита на случай, если заказ физически удален, а отклик остался
+        if (order == null)
+            return BadRequest("Связанный заказ не найден");
+
         if (order.CustomerId != userId)
             return Forbid("Только заказчик может принять отклик");
 
@@ -143,12 +151,10 @@ public class ResponsesController : ControllerBase
         if (response.Status != "Pending")
             return BadRequest("Этот отклик уже принят или отклонён");
 
-        // Принимаем отклик, но заказ отправляем на модерацию
-        response.Status = "Selected";           // новый статус для выбранного отклика
-        order.Status = "PendingModeration";     // ожидает проверки модератором
+        response.Status = "Selected";           
+        order.Status = "PendingModeration";     
         order.FreelancerId = response.FreelancerId;
 
-        // Отклоняем все остальные отклики на этот заказ
         var otherResponses = await _context.Responses
             .Where(r => r.OrderId == order.Id && r.Id != id && r.Status == "Pending")
             .ToListAsync();
@@ -157,7 +163,6 @@ public class ResponsesController : ControllerBase
         {
             r.Status = "Rejected";
 
-            // Уведомление каждому отклонённому фрилансеру
             _context.Notifications.Add(new Notification
             {
                 UserId = r.FreelancerId,
@@ -168,7 +173,6 @@ public class ResponsesController : ControllerBase
             });
         }
 
-        // Уведомление заказчику, что заказ отправлен на модерацию
         _context.Notifications.Add(new Notification
         {
             UserId = userId,
@@ -177,8 +181,6 @@ public class ResponsesController : ControllerBase
             CreatedAt = DateTime.UtcNow,
             IsRead = false
         });
-
-        // (Уведомление фрилансеру будет отправлено после одобрения модератором)
 
         await _context.SaveChangesAsync();
         return Ok(new { Message = "Отклик принят, заказ отправлен на модерацию" });
@@ -196,6 +198,10 @@ public class ResponsesController : ControllerBase
             return NotFound("Отклик не найден");
 
         var order = response.Order;
+        // ИСПРАВЛЕНО: Защита от NullReferenceException
+        if (order == null)
+            return BadRequest("Связанный заказ не найден");
+
         if (order.CustomerId != userId)
             return Forbid("Только заказчик может отклонить отклик");
 
@@ -207,7 +213,6 @@ public class ResponsesController : ControllerBase
 
         response.Status = "Rejected";
 
-        // Уведомление фрилансеру об отклонении
         _context.Notifications.Add(new Notification
         {
             UserId = response.FreelancerId,
