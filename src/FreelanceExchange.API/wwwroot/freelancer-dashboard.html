@@ -227,11 +227,23 @@
 
         // ----- Инициализация -----
         lucide.createIcons();
+       // ==== БЕЗОПАСНАЯ ПРОВЕРКА АВТОРИЗАЦИИ И РОЛИ ====
         const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token) window.location.href = 'login.html';
-        if (user.role !== 'Freelancer') { showToast('Эта страница доступна только фрилансерам', 'error'); window.location.href = 'index.html'; }
+        const userStr = localStorage.getItem('user');
+        
+        if (!token || !userStr) {
+            alert('Сессия истекла или отсутствует. Пожалуйста, авторизуйтесь.');
+            window.location.href = 'login.html';
+        }
 
+        const user = JSON.parse(userStr || '{}');
+        const userRole = (user.role || '').toLowerCase().trim();
+
+        if (userRole !== 'freelancer' && userRole !== 'фрилансер') {
+            alert('Эта страница только для фрилансеров');
+            window.location.href = 'login.html';
+        }
+        // ===============================================
         document.getElementById('userNameHeading').innerText = user.fullName || 'Фрилансер';
         document.getElementById('authBlock').innerHTML = `<div class="hidden sm:flex flex-col text-right"><span class="text-[#8D8F8E] text-[9px] uppercase tracking-wider font-bold">Вы вошли как</span><span class="text-[#161B2F] text-xs font-semibold">${escapeHtml(user.fullName)}</span></div><button id="logoutBtn" class="text-[#5A4A44] hover:text-[#DBA1A2] p-1.5 transition-colors"><i data-lucide="log-out" class="w-4 h-4"></i></button>`;
         lucide.createIcons();
