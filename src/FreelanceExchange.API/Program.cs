@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
-    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+    builder.WebHost.UseUrls($"http://0.0.0:{port}");
 }
 
 builder.Services.AddControllers();
@@ -23,6 +23,7 @@ builder.Services.AddSwaggerGen();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString) || connectionString.Contains("localhost"))
 {
+    // Ваша актуальная строка подключения к Neon Postgres
     connectionString = "Host=dpg-d8is5jk8aovs738lgl60-a;Port=5432;Database=freelanceexchange;Username=freelanceexchange_user;Password=Pc9vzIb0TbRjM9VsRGvmTqX9kjZw2l6u;SslMode=Require;Trust Server Certificate=true;";
 }
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -71,11 +72,8 @@ using (var scope = app.Services.CreateScope())
     
     try
     {
-        // ИСПРАВЛЕНО: Отключен вызов автоматических миграций. 
-        // База данных на Neon уже содержит все необходимые таблицы (Categories, SubscriptionPlans и т.д.),
-        // поэтому повторная попытка их создать приводила к падению контейнера.
-        // dbContext.Database.Migrate();
-        
+        // Автоматический мигратор EF Core пропущен. 
+        // База данных на Neon уже содержит все необходимые таблицы, ручные миграции отключены.
         logger.LogInformation("Автоматический мигратор EF Core пропущен. Проверяем наполнение достижений...");
         dbContext.EnsureAchievementsCreated();
     }
@@ -85,20 +83,23 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ==== ОТДАЧА ФРОНТЕНДА ====
-app.UseDefaultFiles(); // ищет index.html в wwwroot
-app.UseStaticFiles();  // отдаёт статические файлы (css, js, изображения)
+// ==== ОТДАЧА СТАТИЧЕСКИХ ФАЙЛОВ ====
+app.UseDefaultFiles(); // Ищет index.html в wwwroot
+app.UseStaticFiles();  // Отдаёт статические файлы (css, js, изображения)
 
-// Для SPA (клиентский роутинг) – все не-API запросы отдаём index.html
-app.MapFallbackToFile("index.html");
+// ==== БЕЗОПАСНОСТЬ И АВТОРИЗАЦИЯ (СТРОГИЙ ПОРЯДОК) ====
+app.UseAuthentication(); // 1. Проверяем JWT-токен пользователя
+app.UseAuthorization();  // 2. Проверяем права доступа (Фрилансер/Заказчик)
 
-app.UseAuthentication();
-app.UseAuthorization();
-
+// ==== МАРШРУТИЗАЦИЯ АППЛИКАЦИИ ====
 app.MapHub<ChatHub>("/chatHub");
 app.MapControllers();
 
-// ==== HEALTH CHECK (для Render) ====
+// ==== ДЕФОЛТНЫЙ ФАЛБЭК ДЛЯ КЛИЕНТСКОГО РОУТИНГА (SPA) ====
+// Должен вызываться строго после авторизации и маппинга API контроллеров!
+app.MapFallbackToFile("index.html");
+
+// ==== HEALTH CHECK (для проверки статуса контейнера Render) ====
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
