@@ -97,7 +97,6 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 relative antialiased font-sans overflow-y-auto">
 
-    <!-- декоративные световые узлы -->
     <div class="световой-узел top-[-20%] left-[-10%]"></div>
     <div class="световой-узел bottom-[-20%] right-[-10%]"></div>
 
@@ -117,7 +116,6 @@
                 <p class="text-[#5A4A44] text-xs sm:text-sm mt-2 font-light">Авторизация в защищенной среде FreelanceExchange</p>
             </div>
 
-            <!-- Добавлен атрибут novalidate и удалена ссылка "Забыли?" -->
             <form id="loginForm" class="space-y-5" novalidate>
                 <div class="field-wrapper">
                     <label for="email" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44] mb-2 pl-1">Электронная почта</label>
@@ -133,7 +131,6 @@
                 <div class="field-wrapper">
                     <div class="flex justify-between items-center mb-2 pl-1">
                         <label for="password" class="block text-[10px] uppercase tracking-widest font-bold text-[#5A4A44]">Пароль</label>
-                        <!-- Кнопка "Забыли?" удалена по требованию -->
                     </div>
                     <div class="инпут-блок">
                         <div class="pl-4 text-[#8D8F8E] flex-shrink-0">
@@ -217,10 +214,23 @@
                     const data = await res.json();
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify({ email: data.email, fullName: data.fullName, role: data.role }));
-                    if (data.role === 'Admin') window.location.href = 'admin-dashboard.html';
-                    else if (data.role === 'Moderator') window.location.href = 'moderator-dashboard.html';
-                    else if (data.role === 'Freelancer') window.location.href = 'freelancer-dashboard.html';
-                    else window.location.href = 'customer-dashboard.html';
+                    
+                    // Безопасно переводим роль в нижний регистр для точного сравнения
+                    const role = (data.role || '').toLowerCase().trim();
+
+                    // ИСПРАВЛЕНО: Теперь перенаправление сработает и для русских, и для английских ролей из БД Neon
+                    if (role === 'admin' || role === 'администратор') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else if (role === 'moderator' || role === 'модератор') {
+                        window.location.href = 'moderator-dashboard.html';
+                    } else if (role === 'freelancer' || role === 'фрилансер') {
+                        window.location.href = 'freelancer-dashboard.html';
+                    } else if (role === 'customer' || role === 'заказчик') {
+                        window.location.href = 'customer-dashboard.html';
+                    } else {
+                        // Резервный вариант
+                        window.location.href = 'customer-dashboard.html';
+                    }
                 } else {
                     const err = await res.text();
                     document.getElementById('errorMsg').textContent = err || 'Неверный логин или пароль';
