@@ -32,7 +32,7 @@ public class PortfolioController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.RoleId != 3)
+        if (user == null || user.RoleId != 2)
             return Forbid("Только фрилансеры могут иметь портфолио");
 
         var items = await _context.Portfolios
@@ -55,7 +55,7 @@ public class PortfolioController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.RoleId != 3)
+        if (user == null || user.RoleId != 2)
             return Forbid("Только фрилансеры могут добавлять портфолио");
 
         var item = new Portfolio
