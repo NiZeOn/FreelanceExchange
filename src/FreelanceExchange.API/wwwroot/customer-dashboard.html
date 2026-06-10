@@ -155,10 +155,23 @@
         allModals.forEach(modalId => { const modal = document.getElementById(modalId); if(modal) modal.addEventListener('click', function(e){ if(e.target === modal){ modal.classList.add('hidden'); if(modalId === 'profileViewModal') modal.style.display = 'none'; document.body.style.overflow = ''; } }); });
         document.querySelectorAll('.modal-blur').forEach(modal => { modal.addEventListener('click', function(e){ if(e.target === this) closeModal(this.id); }); });
 
+        // ==== БЕЗОПАСНАЯ ПРОВЕРКА АВТОРИЗАЦИИ И РОЛИ ====
         const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token) window.location.href = 'login.html';
-        if (user.role !== 'Customer') { alert('Эта страница только для заказчиков'); window.location.href = 'index.html'; }
+        const userStr = localStorage.getItem('user');
+        
+        if (!token || !userStr) {
+            alert('Сессия истекла или отсутствует. Пожалуйста, авторизуйтесь.');
+            window.location.href = 'login.html';
+        }
+
+        const user = JSON.parse(userStr || '{}');
+        const userRole = (user.role || '').toLowerCase().trim();
+
+        if (userRole !== 'customer' && userRole !== 'заказчик') {
+            alert('Эта страница только для заказчиков');
+            window.location.href = 'login.html';
+        }
+        // ===============================================
 
         document.getElementById('userNameHeading').innerText = user.fullName || 'Заказчик';
         const authBlock = document.getElementById('authBlock');
