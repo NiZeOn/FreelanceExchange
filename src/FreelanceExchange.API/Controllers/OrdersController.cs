@@ -44,8 +44,10 @@ public class OrdersController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || user.RoleId != 2)
-            return Forbid("Только заказчики могут создавать заказы");
+        
+        // ИСПРАВЛЕНО: Роль заказчика — 3. Заменено Forbid на BadRequest
+        if (user == null || user.RoleId != 3)
+            return BadRequest("Только заказчики могут создавать заказы");
 
         var category = await _context.Categories.FindAsync(dto.CategoryId);
         if (category == null)
@@ -83,7 +85,7 @@ public class OrdersController : ControllerBase
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         int? userId = userIdClaim != null ? int.Parse(userIdClaim) : (int?)null;
         var user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
-        bool isAdminOrModerator = user?.RoleId == 5 || user?.RoleId == 4;
+        bool isAdminOrModerator = user?.RoleId == 5 || user?.RoleId == 4 || user?.RoleId == 1;
 
         var query = _context.Orders
             .Include(o => o.Customer)
@@ -95,11 +97,13 @@ public class OrdersController : ControllerBase
         {
             query = query.Where(o => o.Status == "Open");
         }
-        else if (!isAdminOrModerator && user.RoleId == 2)
+        // ИСПРАВЛЕНО: Роль 3 — это Заказчик. Он видит свои созданные заказы.
+        else if (!isAdminOrModerator && user.RoleId == 3)
         {
             query = query.Where(o => o.CustomerId == userId.Value);
         }
-        else if (!isAdminOrModerator && user.RoleId == 3)
+        // ИСПРАВЛЕНО: Роль 2 — это Фрилансер. Он видит открытые или свои текущие проекты.
+        else if (!isAdminOrModerator && user.RoleId == 2)
         {
             query = query.Where(o => o.Status == "Open" ||
                                     ((o.Status == "InProgress" || o.Status == "Completed") && o.FreelancerId == userId.Value));
@@ -139,9 +143,9 @@ public class OrdersController : ControllerBase
                 Status = o.Status,
                 CreatedAt = o.CreatedAt,
                 CustomerId = o.CustomerId,
-                CustomerName = o.Customer.FullName,
+                CustomerName = o.Customer != null ? o.Customer.FullName : "Неизвестный заказчик",
                 CategoryId = o.CategoryId,
-                CategoryName = o.Category.Name,
+                CategoryName = o.Category != null ? o.Category.Name : "Без категории",
                 FreelancerId = o.FreelancerId,
                 FreelancerName = o.Freelancer != null ? o.Freelancer.FullName : null,
                 FreelancerFileUrl = o.FreelancerFileUrl,
@@ -166,12 +170,13 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound();
 
-        bool canView = user?.RoleId == 5 || user?.RoleId == 4 ||
-                       (user?.RoleId == 2 && order.CustomerId == userId) ||
-                       (user?.RoleId == 3 && order.FreelancerId == userId && (order.Status == "InProgress" || order.Status == "Completed"));
+        // ИСПРАВЛЕНО: Корректировка логики доступа по ролям (Заказчик = 3, Фрилансер = 2)
+        bool canView = user?.RoleId == 5 || user?.RoleId == 4 || user?.RoleId == 1 ||
+                       (user?.RoleId == 3 && order.CustomerId == userId) ||
+                       (user?.RoleId == 2 && order.FreelancerId == userId && (order.Status == "InProgress" || order.Status == "Completed"));
         
         if (!canView)
-            return Forbid("У вас нет доступа к этому заказу");
+            return BadRequest("У вас нет доступа к этому заказу");
 
         var dto = new OrderResponseDto
         {
@@ -183,9 +188,9 @@ public class OrdersController : ControllerBase
             Status = order.Status,
             CreatedAt = order.CreatedAt,
             CustomerId = order.CustomerId,
-            CustomerName = order.Customer.FullName,
+            CustomerName = order.Customer != null ? order.Customer.FullName : "Неизвестный заказчик",
             CategoryId = order.CategoryId,
-            CategoryName = order.Category.Name,
+            CategoryName = order.Category != null ? order.Category.Name : "Без категории",
             FreelancerId = order.FreelancerId,
             FreelancerName = order.Freelancer?.FullName,
             FreelancerFileUrl = order.FreelancerFileUrl,
@@ -194,8 +199,7 @@ public class OrdersController : ControllerBase
 
         return Ok(dto);
     }
-
-    [HttpGet("{id}/messages")]
+ [HttpGet("{id}/messages")]
     public async Task<IActionResult> GetMessages(int id)
     {
         var userId = GetCurrentUserId();
@@ -203,11 +207,12 @@ public class OrdersController : ControllerBase
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound();
 
-        bool canView = user?.RoleId == 5 || user?.RoleId == 4 ||
-                       (user?.RoleId == 2 && order.CustomerId == userId) ||
-                       (user?.RoleId == 3 && order.FreelancerId == userId && (order.Status == "InProgress" || order.Status == "Completed"));
+        // ИСПРАВЛЕНО: Корректировка логики доступа по ролям (Заказчик = 3, Фрилансер = 2, Админ = 1)
+        bool canView = user?.RoleId == 5 || user?.RoleId == 4 || user?.RoleId == 1 ||
+                       (user?.RoleId == 3 && order.CustomerId == userId) ||
+                       (user?.RoleId == 2 && order.FreelancerId == userId && (order.Status == "InProgress" || order.Status == "Completed"));
         
-        if (!canView) return Forbid();
+        if (!canView) return BadRequest("Доступ запрещен");
 
         var messages = await _context.ChatMessages
             .Where(m => m.OrderId == id)
@@ -232,8 +237,9 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound();
 
+        // ИСПРАВЛЕНО: Заменено Forbid на BadRequest
         if (order.CustomerId != userId)
-            return Forbid("Только автор заказа может редактировать");
+            return BadRequest("Только автор заказа может редактировать");
 
         if (order.Status != "Open")
             return BadRequest("Нельзя редактировать заказ, уже принятый в работу");
@@ -266,8 +272,9 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound();
 
+        // ИСПРАВЛЕНО: Заменено Forbid на BadRequest
         if (order.CustomerId != userId)
-            return Forbid("Только автор заказа может удалить");
+            return BadRequest("Только автор заказа может удалить");
 
         if (order.Status != "Open")
             return BadRequest("Нельзя удалить заказ, уже принятый в работу");
@@ -288,11 +295,15 @@ public class OrdersController : ControllerBase
         var userId = GetCurrentUserId();
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound();
-        if (order.CustomerId != userId) return Forbid("Только заказчик может назначить исполнителя");
+        
+        // ИСПРАВЛЕНО: Заменено Forbid на BadRequest
+        if (order.CustomerId != userId) return BadRequest("Только заказчик может назначить исполнителя");
         if (order.Status != "Open") return BadRequest("Заказ уже в работе или завершён");
 
         var freelancer = await _context.Users.FindAsync(freelancerId);
-        if (freelancer == null || freelancer.RoleId != 3)
+        
+        // ИСПРАВЛЕНО: Изменено freelancer.RoleId != 3 на != 2 (роль фрилансера — 2)
+        if (freelancer == null || freelancer.RoleId != 2)
             return BadRequest("Пользователь не является фрилансером");
 
         var freelancerAccount = await GetOrCreateAccount(freelancerId);
@@ -316,14 +327,17 @@ public class OrdersController : ControllerBase
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null) return NotFound();
-        if (order.CustomerId != userId) return Forbid("Только заказчик может завершить заказ");
+        
+        // ИСПРАВЛЕНО: Заменено Forbid на BadRequest
+        if (order.CustomerId != userId) return BadRequest("Только заказчик может завершить заказ");
         if (order.Status != "InProgress") return BadRequest("Заказ не в работе. Сначала назначьте исполнителя.");
         if (order.FreelancerId == null) return BadRequest("У заказа нет исполнителя");
 
         var freelancerAccount = await GetOrCreateAccount(order.FreelancerId.Value);
         var customerAccount = await GetOrCreateAccount(order.CustomerId);
         
-        var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.RoleId == 5);
+        // ИСПРАВЛЕНО: Учтен новый администратор Artyom с RoleId = 1
+        var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.RoleId == 5 || u.RoleId == 1);
         if (adminUser == null)
             return BadRequest("В системе нет администратора для сбора комиссии");
 
@@ -333,7 +347,6 @@ public class OrdersController : ControllerBase
         decimal commission = order.Budget * (commissionRate / 100);
         decimal freelancerPayout = order.Budget - commission;
 
-        // Переводим средства
         freelancerAccount.Blocked -= order.Budget;
         freelancerAccount.Balance += freelancerPayout;
         customerAccount.Blocked -= order.Budget;
@@ -341,7 +354,6 @@ public class OrdersController : ControllerBase
 
         order.Status = "Completed";
 
-        // Логируем транзакции
         _context.Transactions.Add(new Transaction
         {
             InitiatorId = userId,
@@ -372,7 +384,6 @@ public class OrdersController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        // Уведомление фрилансеру
         _context.Notifications.Add(new Notification
         {
             UserId = order.FreelancerId.Value,
@@ -403,8 +414,10 @@ public class OrdersController : ControllerBase
         var userId = GetCurrentUserId();
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound();
+        
+        // ИСПРАВЛЕНО: Заменено Forbid() на BadRequest()
         if (order.FreelancerId != userId || order.Status != "InProgress")
-            return Forbid();
+            return BadRequest("Доступ к загрузке файлов ограничен");
 
         var url = await SaveFile(file, "results");
         order.FreelancerFileUrl = url;
@@ -418,8 +431,10 @@ public class OrdersController : ControllerBase
         var userId = GetCurrentUserId();
         var order = await _context.Orders.FindAsync(id);
         if (order == null) return NotFound();
+        
+        // ИСПРАВЛЕНО: Заменено Forbid() на BadRequest()
         if (order.CustomerId != userId || order.Status != "InProgress")
-            return Forbid();
+            return BadRequest("Доступ к загрузке файлов ограничен");
 
         var url = await SaveFile(file, "results");
         order.CustomerFileUrl = url;
