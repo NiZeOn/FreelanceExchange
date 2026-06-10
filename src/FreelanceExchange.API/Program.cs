@@ -67,15 +67,21 @@ app.UseSwaggerUI();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
     try
     {
-        dbContext.Database.Migrate();
+        // ИСПРАВЛЕНО: Отключен вызов автоматических миграций. 
+        // База данных на Neon уже содержит все необходимые таблицы (Categories, SubscriptionPlans и т.д.),
+        // поэтому повторная попытка их создать приводила к падению контейнера.
+        // dbContext.Database.Migrate();
+        
+        logger.LogInformation("Автоматический мигратор EF Core пропущен. Проверяем наполнение достижений...");
         dbContext.EnsureAchievementsCreated();
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ошибка при инициализации базы данных");
+        logger.LogError(ex, "Ошибка при инициализации данных или проверке ачивок");
     }
 }
 
